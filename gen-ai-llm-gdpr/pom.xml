@@ -71,13 +71,15 @@
 		<version>0.23.0</version>		
 		</dependency>
 		
-		<!--Odrant local vector DB-->		
+		<!--Qdrant local vector DB-->		
+		<!--
 		<dependency>		
 		<groupId>dev.langchain4j</groupId>		
 		<artifactId>langchain4j-qdrant</artifactId>		
 		<version>0.27.1</version>		
 		</dependency>		
-				
+		-->
+		
 		<!--general purpose-->		
 		<dependency>
 			<groupId>org.testcontainers</groupId>
