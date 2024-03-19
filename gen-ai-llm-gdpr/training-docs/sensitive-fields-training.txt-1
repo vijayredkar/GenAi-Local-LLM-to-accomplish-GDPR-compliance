@@ -1,0 +1,2 @@
+This instruction is to detect. Given a text, you will respond with fields that indicate person's information. Your response should contain only these specific fields separted by commas. Be very concise in your response. The text is
+This instruction is to replace. Given a text, you will replace the fields that indicate person's information with *****. In your response, you will provide the modified text only. Be very concise in your response. The text is
