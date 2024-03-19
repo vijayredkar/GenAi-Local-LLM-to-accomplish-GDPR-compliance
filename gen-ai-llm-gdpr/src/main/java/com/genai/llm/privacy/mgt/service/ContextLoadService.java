@@ -58,9 +58,15 @@ public class ContextLoadService
 		{
 			try  //try connecting to VectorDB from local machine launch
 			{
-				//-- Chroma		
-				String vectorDbUrl ="http://127.0.0.1:8000";		
-				String vectorDbCollection ="collection-gdpr-1";
+				//--  Chroma
+				/*
+				// local machine
+				String vectorDbUrl        = "http://127.0.0.1:8000";
+				String vectorDbCollection = "collection-gdpr-1";	
+				*/
+				// PG env with Docker  
+				String vectorDbUrl        = "https://chroma.bawabaai-gpt.svc.cluster.local:8000";
+				String vectorDbCollection = "collection-gdpr-1";	
 				
 				System.out.println("---- started connect to VectorDB for Tests " + " vectorDbUrl " + vectorDbUrl + " vectorDbCollection: " + vectorDbCollection);
 				embeddingStore = ChromaEmbeddingStore.builder()
