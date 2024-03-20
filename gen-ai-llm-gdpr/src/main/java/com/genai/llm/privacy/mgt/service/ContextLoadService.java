@@ -65,7 +65,7 @@ public class ContextLoadService
 				String vectorDbCollection = "collection-gdpr-1";	
 				*/
 				// PG env with Docker  
-				String vectorDbUrl        = "https://chroma.bawabaai-gpt.svc.cluster.local:8000";
+				String vectorDbUrl        = "http://chroma.bawabaai-gpt.svc.cluster.local:8000";
 				String vectorDbCollection = "collection-gdpr-1";	
 				
 				System.out.println("---- started connect to VectorDB for Tests " + " vectorDbUrl " + vectorDbUrl + " vectorDbCollection: " + vectorDbCollection);
@@ -78,7 +78,7 @@ public class ContextLoadService
 				String vectorDburl = "http://10.119.7.235:9200";		
 				String userName = "openai-vector";
 				String password = "openai-vector";		
-				String vectorDbCollection = "nptApplicableForElastic";
+				String vectorDbCollection = "notApplicableForElastic";
 				
 				System.out.println("started connect to Vectors for Tests vectorDbUrl: " + vectorDbUrl + " vectorDbCollection: "+vectorDbCollection);
 				embeddingStore = ElasticsearchEmbebeddingStore.builder()		
