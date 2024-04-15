@@ -26,7 +26,7 @@ public class RetrievalService
 	/*
 	 * LLM - RAG orchestration operations
 	 */
-	public String orchestrate(String text) 
+	public String orchestrate(String text, boolean testMode) //vj2
 	{	
 		System.out.println("\n---- started LLM - RAG orchestrations");
 		String userPrompt = text;
@@ -39,7 +39,7 @@ public class RetrievalService
 		System.out.println("---- constructed RAG promptWithFullContext \n"+promptWithFullContext);		
 		
 		//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
-		String response = largeLangModelSvc.generate(promptWithFullContext); //vj1
+		String response = largeLangModelSvc.generate(promptWithFullContext, testMode);//vj2
 		//String response = "**** Ollama LLM server de-activated";
 		
 		System.out.println("---- completed LLM - RAG orchestrations with response : \n"+ response);
