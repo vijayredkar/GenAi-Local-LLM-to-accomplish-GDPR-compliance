@@ -12,7 +12,7 @@ import com.genai.llm.privacy.mgt.service.RetrievalService;
 import com.genai.llm.privacy.mgt.service.VectorDataStoreService;
 
 @RestController
-@RequestMapping(value="/gen-ai/v1/lla")
+@RequestMapping(value="/gen-ai/v1/llm")
 public class DataPrivacyController 
 {
 	@Autowired //vj
