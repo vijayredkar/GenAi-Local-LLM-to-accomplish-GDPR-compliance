@@ -40,7 +40,6 @@ public class RetrievalService
 		
 		//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
 		String response = largeLangModelSvc.generate(promptWithFullContext); //vj1
-		response = "**** Ollama LLM server activated";
 		//String response = "**** Ollama LLM server de-activated";
 		
 		System.out.println("---- completed LLM - RAG orchestrations with response : \n"+ response);
