@@ -51,9 +51,17 @@ public class LargeLanguageModelService
 		String currentDir = System.getProperty("user.dir");
 		String resoucePath = currentDir + "\\"+ "\\src\\main\\resources\\application.properties";
 		
-		String modelName       = fileUtilsSvc.extractFields("llm.model.name", resoucePath);		
-		String llmServerPort   = fileUtilsSvc.extractFields("llm.server.port", resoucePath);
-		String llmResponseTemp = fileUtilsSvc.extractFields("llm.response.temperature", resoucePath);		
+		//vj2
+		String modelName       = "llama2";		
+		String llmServerPort   = "11434";
+		String llmResponseTemp = "0.9";
+		
+		if(!testMode)
+		{
+			modelName       = fileUtilsSvc.extractFields("llm.model.name", resoucePath);		
+			llmServerPort    = fileUtilsSvc.extractFields("llm.server.port", resoucePath);
+			llmResponseTemp = fileUtilsSvc.extractFields("llm.response.temperature", resoucePath);
+		}		
 		
 		llmServerConfig.put("modelName", modelName);
 		llmServerConfig.put("llmServerPort", llmServerPort);
