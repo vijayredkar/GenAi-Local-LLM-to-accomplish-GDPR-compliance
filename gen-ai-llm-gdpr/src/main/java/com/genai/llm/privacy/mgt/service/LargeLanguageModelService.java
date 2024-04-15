@@ -23,10 +23,10 @@ public class LargeLanguageModelService
 	/*
 	 * Local LLM server : Ollama operations	
 	 */
-	public String generate(String text) 
+	public String generate(String text, boolean testMode) //vj2
 	{
 		
-		Map<String, String> severConfigMap  = gatherConfig();		
+		Map<String, String> severConfigMap  = gatherConfig(testMode); //vj2	
 		String modelName       = severConfigMap.get("modelName");		
 		Integer llmServerPort  = Integer.parseInt(severConfigMap.get("llmServerPort"));
 		Double llmResponseTemp = Double.parseDouble(severConfigMap.get("llmResponseTemp"));
@@ -44,7 +44,7 @@ public class LargeLanguageModelService
 	/*
 	 * get server config
 	 */
-	private Map<String, String> gatherConfig() 
+	private Map<String, String> gatherConfig(boolean testMode) //vj2
 	{
 		Map<String, String> llmServerConfig = new HashMap<String, String>();
 		
