@@ -49,7 +49,9 @@ public class DataPrivacyController
 	@GetMapping("/retrieve")	
 	public ResponseEntity<String> retrieve (@RequestParam("text") String text)
 	{	
-		String response	= retrievalSvc.orchestrate (text);	
+		boolean testMode= true; //vj2
+		System.out.println("\n---- started retrieve flow - mode : "+testMode);
+		String response = retrievalSvc.orchestrate(text, testMode);	
 		//string response; //vj1
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
