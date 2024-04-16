@@ -39,12 +39,16 @@ public class VectorDataStoreService
 	 * VectorDB operations to fetch records
 	 */
 	
-	public String retrieve (String text)
+	public String retrieve(String text, String userPrompt)//vj3
 	{
 		System.out.println("\n--- started VectorDB operations");		
-		System.out.println("---- embeddingModel : "+ modelSvc.getEmbeddingModel () +" \n"+"text : "+ text +" \n "+"minScore "+ minScoreRelevanceScore +" \n"+"maxResults : "+ maxResultsToRetrieve);
+		//vj3
+		System.out.println("---- embeddingModel : "+ modelSvc.getEmbeddingModel() +" \n "+"text : "+ text +" \n "+"userPrompt : "+ userPrompt  +" \n "+"minScore : "+ minScoreRelevanceScore +" \n "+"maxResults : "+ maxResultsToRetrieve);
 		
-		List<EmbeddingMatch<TextSegment>> result = fetchRecords (text);		
+		//vj3
+		//List<EmbeddingMatch<TextSegment>> result = fetchRecords(text);
+		List<EmbeddingMatch<TextSegment>> result = fetchRecords(userPrompt);
+		
 		StringBuilder responseBldr = new StringBuilder(); StringBuilder tempResponseBldr = new StringBuilder();
 		
 		for (EmbeddingMatch<TextSegment> segment: result)		
@@ -71,7 +75,10 @@ public class VectorDataStoreService
 		//EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStore(); //vjl 
 		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests();	
 		Embedding queryEmbedding = embdgModel.embed (query).content(); 
-		return	embdgStore.findRelevant (queryEmbedding, maxResultsToRetrieve, minScoreRelevanceScore);
+		//vj3
+	        //return  embdgStore.findRelevant(queryEmbedding, maxResultsToRetrieve, minScoreRelevanceScore);
+	        System.out.println("**** VectorDB invocation de-activated");
+	        return new ArrayList<EmbeddingMatch<TextSegment>>(); // "dummySemanticResult"
 	}
 	
 	/*
