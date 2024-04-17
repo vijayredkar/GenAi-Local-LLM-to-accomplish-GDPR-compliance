@@ -121,6 +121,8 @@ public class VectorDataStoreService
 		lines.add(testContext); 
 		testContext = "Kadapa"; 
 		lines.add(testContext);
+		testContext = "Coimbatore"; //vj3
+		lines.add(testContext);	
 		}
 		else
 		{
