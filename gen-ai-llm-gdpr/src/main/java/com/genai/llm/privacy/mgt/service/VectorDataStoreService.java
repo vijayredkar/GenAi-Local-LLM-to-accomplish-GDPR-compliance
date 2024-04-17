@@ -76,9 +76,9 @@ public class VectorDataStoreService
 		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests();	
 		Embedding queryEmbedding = embdgModel.embed (query).content(); 
 		//vj3
-	        //return  embdgStore.findRelevant(queryEmbedding, maxResultsToRetrieve, minScoreRelevanceScore);
-	        System.out.println("**** VectorDB invocation de-activated");
-	        return new ArrayList<EmbeddingMatch<TextSegment>>(); // "dummySemanticResult"
+	        return  embdgStore.findRelevant(queryEmbedding, maxResultsToRetrieve, minScoreRelevanceScore);
+	        //System.out.println("**** VectorDB invocation de-activated");
+	        //return new ArrayList<EmbeddingMatch<TextSegment>>(); // "dummySemanticResult"
 	}
 	
 	/*
