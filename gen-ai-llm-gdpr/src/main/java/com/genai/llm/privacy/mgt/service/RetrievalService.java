@@ -38,11 +38,11 @@ public class RetrievalService
 		String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
 		System.out.println("---- constructed RAG promptWithFullContext \n"+promptWithFullContext);		
 
-		//vj3
+		//vj4
 		//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
-		//String response = largeLangModelSvc.generate(promptWithFullContext, testMode);//vj2
-		String response = contextFromVectorDb;
-		System.out.println("**** Ollama LLM server de-activated");
+		String response = largeLangModelSvc.generate(promptWithFullContext, testMode);
+		//String response = contextFromVectorDb;
+		//System.out.println("**** Ollama LLM server de-activated");
 		
 		System.out.println("---- completed LLM - RAG orchestrations with response : \n"+ response);
 		return response;
