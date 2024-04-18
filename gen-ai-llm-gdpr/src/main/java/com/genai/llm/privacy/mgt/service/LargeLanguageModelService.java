@@ -31,13 +31,25 @@ public class LargeLanguageModelService
 		Integer llmServerPort  = Integer.parseInt(severConfigMap.get("llmServerPort"));
 		Double llmResponseTemp = Double.parseDouble(severConfigMap.get("llmResponseTemp"));
 				
-	    GenericContainer<?> ollama = startLLMServer(modelName, llmServerPort);
-	    
+	    //vj4
+	    /*
+             -- on the fly launch. Does not work in PG env
+	    GenericContainer<?> ollama = startLLMServer(modelName, llmServerPort); 	    
 	    ChatLanguageModel model = buildLLMResponseModel(ollama, modelName, llmResponseTemp);
-	    String llmResponse = model.generate(text);	    
-	    System.out.println("\n---- Got local LLM response : "+ llmResponse);
-	    	    
-	    stopLLMServer(ollama);
+	    stopLLMServer(ollama); // stop LLM server on the fly.
+	    */	
+		
+	    //vj4
+	    //--standalone server invocation
+	    String llmServerUrl = "http://127.0.0.1:11434"; //vijay hardcoded		
+	    ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);
+		
+	     //text = "What is your name?";         //vijay hardcoded		
+	     text = "What is the capital of Oman?"; //vijay hardcoded
+	     System.out.println("\n---- Started local LLM invocation for user input : "+ text);
+	     String llmResponse = model.generate(text);	    
+	     System.out.println("\n---- Got local LLM response : "+ llmResponse);	    	    
+	    
 	    return llmResponse;
 	 }
 
@@ -116,5 +128,22 @@ public class LargeLanguageModelService
 								        			   .timeout(Durations.TEN_MINUTES) //best is to NOT change this
 								        			   .build();
 			return model;
-		}
+	}
+
+	//vj4
+	 /*
+	  * standalone LLM server instance.
+	  * be sure to have Ollama server running 
+	  */
+	 private ChatLanguageModel buildLLMResponseModelStandAloneServer(String llmServerUrl, String modelName, double llmResponseTemp) 
+	 {
+			ChatLanguageModel model = OllamaChatModel.builder()
+								        			   //.baseUrl("http://127.0.0.1:11434") //server running on localhost
+												   .baseUrl(llmServerUrl)
+								        			   .modelName(modelName)
+								        			   .temperature(llmResponseTemp)
+								        			   .timeout(Durations.TEN_MINUTES) //best is to NOT change this
+								        			   .build();
+			return model;
+	}
 }
