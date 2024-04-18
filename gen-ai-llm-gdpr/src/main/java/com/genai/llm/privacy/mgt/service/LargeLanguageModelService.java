@@ -41,7 +41,9 @@ public class LargeLanguageModelService
 		
 	    //vj4
 	    //--standalone server invocation
-	    String llmServerUrl = "http://127.0.0.1:11434"; //vijay hardcoded		
+	    //String llmServerUrl = "http://127.0.0.1:11434"; //vijay hardcoded local machine
+	    String llmServerUrl = "http://ollama.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded
+		
 	    ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);
 		
 	     //text = "What is your name?";         //vijay hardcoded		
