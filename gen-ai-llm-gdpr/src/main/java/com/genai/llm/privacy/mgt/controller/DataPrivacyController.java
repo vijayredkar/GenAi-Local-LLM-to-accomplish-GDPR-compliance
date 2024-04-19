@@ -55,4 +55,32 @@ public class DataPrivacyController
 		//string response; //vj1
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
+
+	//vj5
+	/*
+	 * endpoint to get a response from the local LLM inference engine 
+	 */
+	@GetMapping("/testVectorDBInvocationOnly")
+	public ResponseEntity<String> invokeVectorDBOnly(@RequestParam("text") String text) 
+	{
+		boolean testMode= true; //vj2
+		System.out.println("\n---- started invokeVectorDBOnly - mode : "+testMode);
+		String response = retrievalSvc.orchestrateVectorDBOnly(text, testMode);
+		//String response = ""; //vj1
+		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
+	
+	//vj5
+	/*
+	 * endpoint to get a response from the local LLM inference engine 
+	 */
+	@GetMapping("/testLLMServerInvocationOnly")
+	public ResponseEntity<String> invokeLLMServerOnly(@RequestParam("text") String text)
+	{
+		boolean testMode= true; //vj2
+		System.out.println("\n---- started invokeLLMServer - mode : "+testMode);
+		String response = retrievalSvc.orchestrateLLMServerOnly(text, testMode);
+		//String response = ""; //vj1
+		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
 }
