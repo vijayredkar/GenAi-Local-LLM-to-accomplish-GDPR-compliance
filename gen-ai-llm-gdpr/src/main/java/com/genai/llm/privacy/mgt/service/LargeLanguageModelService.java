@@ -45,9 +45,9 @@ public class LargeLanguageModelService
 	    String llmServerUrl = "http://ollama.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded
 		
 	    ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);
-		
+             //vj5		
 	     //text = "What is your name?";         //vijay hardcoded		
-	     text = "What is the capital of Oman?"; //vijay hardcoded
+	     //text = "What is the capital of Oman?"; //vijay hardcoded
 	     System.out.println("\n---- Started local LLM invocation for user input : "+ text);
 	     String llmResponse = model.generate(text);	    
 	     System.out.println("\n---- Got local LLM response : "+ llmResponse);	    	    
