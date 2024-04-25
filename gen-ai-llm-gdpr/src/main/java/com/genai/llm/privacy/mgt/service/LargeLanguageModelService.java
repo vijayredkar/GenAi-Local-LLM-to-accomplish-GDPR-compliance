@@ -68,8 +68,8 @@ public class LargeLanguageModelService
 		String currentDir = System.getProperty("user.dir");
 		String resoucePath = currentDir + "\\"+ "\\src\\main\\resources\\application.properties";
 		
-		//vj2
-		String modelName       = "llama2";		
+		//vj5
+		String modelName       = "llama3";		
 		String llmServerPort   = "11434";
 		String llmResponseTemp = "0.9";
 		
