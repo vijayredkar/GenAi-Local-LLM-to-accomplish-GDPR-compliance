@@ -50,6 +50,8 @@ public class LargeLanguageModelService
 	     //text = "What is your name?";         //vijay hardcoded		
 	     //text = "What is the capital of Oman?"; //vijay hardcoded
 	     System.out.println("\n---- Started local LLM invocation for user input : "+ text);
+	     System.out.println("---- Generating with modelName : "+ modelName);
+		
 	     String llmResponse = model.generate(text);	    
 	     System.out.println("\n---- Got local LLM response : "+ llmResponse);	    	    
 	    
