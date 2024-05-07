@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation. PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation. RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind. annotation. RestController;
@@ -75,12 +76,28 @@ public class DataPrivacyController
 	 * endpoint to get a response from the local LLM inference engine 
 	 */
 	@GetMapping("/testLLMServerInvocationOnly")
-	public ResponseEntity<String> invokeLLMServerOnly(@RequestParam("text") String text)
+	public ResponseEntity<String> invokeLLMServerOnlyWithSmallPayload(@RequestParam("text") String text)
 	{
 		boolean testMode= true; //vj2
-		System.out.println("\n---- started invokeLLMServer - mode : "+testMode);
+		System.out.println("\n---- started invokeLLMServerOnlyWithSmallPayload - mode : "+testMode);
 		String response = retrievalSvc.orchestrateLLMServerOnly(text, testMode);
 		//String response = ""; //vj1
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
+	
+	
+	
+	//vj5
+		/*
+		 * endpoint to get a response from the local LLM inference engine 
+		 */
+		@PostMapping("/testLLMServerInvocationOnly")
+		public ResponseEntity<String> invokeLLMServerOnlyWithBigPayload(@RequestBody String text, @RequestParam(value = "context", required = false) String context)
+		{
+			boolean testMode= true; //vj2
+			System.out.println("\n---- started invokeLLMServerOnlyWithBigPayload - mode : "+testMode);
+			String response = retrievalSvc.orchestrateLLMServerOnlyWithBigPayload(text, testMode, context);
+			//String response = ""; //vj1
+			return new ResponseEntity<>(response, HttpStatus.OK);
+		}
 }
