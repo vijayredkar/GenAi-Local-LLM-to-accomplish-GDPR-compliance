@@ -52,10 +52,23 @@ public class ContextLoadService
 		return embeddingStore;
 	}
 	
-	public EmbeddingStore<TextSegment> getEmbeddingStoreForTests() //vj1
+	//vj6
+	/*
+	public EmbeddingStore<TextSegment> getEmbeddingStoreForTests()
 	{
+		return getEmbeddingStoreForTests("city");
+	}
+	*/
+	
+	//vj6
+	//public EmbeddingStore<TextSegment> getEmbeddingStoreForTests(String category) //vj6
+	public EmbeddingStore<TextSegment> getEmbeddingStoreForTests(String vectorDbCollection)
+	{
+		//vj6
+		/*
 		if (embeddingStore == null)
 		{
+		*/
 			try  //try connecting to VectorDB from local machine launch
 			{
 				//--  Chroma
@@ -65,8 +78,8 @@ public class ContextLoadService
 				String vectorDbCollection = "collection-gdpr-1";	
 				*/
 				// PG env with Docker  
-				String vectorDbUrl        = "http://chroma.bawabaai-gpt.svc.cluster.local:8000";
-				String vectorDbCollection = "collection-gdpr-1";	
+				String vectorDbUrl        = "http://chroma.bawabaai-gpt.svc.cluster.local:8000";    //access within PG POD only
+				//String vectorDbUrl        = "https://chroma-bawabaai-gpt.pgocp.uat.emiratesnbd.com";  //access from local machine	
 				
 				System.out.println("---- started connect to VectorDB for Tests " + " vectorDbUrl " + vectorDbUrl + " vectorDbCollection: " + vectorDbCollection);
 				embeddingStore = ChromaEmbeddingStore.builder()
@@ -94,8 +107,8 @@ public class ContextLoadService
 			{
 				System.out.println("Error Cannot connect to VectorDB: " +e);// scenario local machine does not have running instance of vectors.
 			}
-		}
-			System.out.println("---- completed connect to Vectorte for tests. Got embeddingStore " +embeddingStore);
+		/*}*/
+			System.out.println("---- completed connect to VectorDB for tests. Got embeddingStore " +embeddingStore);
 			return embeddingStore;
 	}
 }
