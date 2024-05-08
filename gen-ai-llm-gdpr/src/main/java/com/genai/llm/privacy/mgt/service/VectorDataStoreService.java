@@ -35,19 +35,26 @@ public class VectorDataStoreService
 	@Autowired	
 	private FileUtilsService fileUtilsSvc;
 	
+	
+	//vj6
+	public String retrieve(String contextType, String userPrompt)
+	{
+		return retrieve("city", contextType, userPrompt);
+	}
+	
 	/* 
 	 * VectorDB operations to fetch records
 	 */
 	
-	public String retrieve(String text, String userPrompt)//vj3
+	public String retrieve(String category, String contextType, String userPrompt)//vj6
 	{
 		System.out.println("\n--- started VectorDB operations");		
 		//vj3
-		System.out.println("---- embeddingModel : "+ modelSvc.getEmbeddingModel() +" \n "+"text : "+ text +" \n "+"userPrompt : "+ userPrompt  +" \n "+"minScore : "+ minScoreRelevanceScore +" \n "+"maxResults : "+ maxResultsToRetrieve);
+		System.out.println("---- embeddingModel : "+ modelSvc.getEmbeddingModel() +" \n "+"contextType : "+ contextType +" \n "+"userPrompt : "+ userPrompt +" \n "+"category : "+ category  +" \n "+"minScore : "+ minScoreRelevanceScore +" \n "+"maxResults : "+ maxResultsToRetrieve);
 		
 		//vj3
 		//List<EmbeddingMatch<TextSegment>> result = fetchRecords(text);
-		List<EmbeddingMatch<TextSegment>> result = fetchRecords(userPrompt);
+		List<EmbeddingMatch<TextSegment>> result = fetchRecords(category, userPrompt);//vj6
 		
 		StringBuilder responseBldr = new StringBuilder(); StringBuilder tempResponseBldr = new StringBuilder();
 		
@@ -69,11 +76,21 @@ public class VectorDataStoreService
 	/*
 	* fetches records from VectorDB based on semantic similarities	
 	*/	
-	public List<EmbeddingMatch<TextSegment>> fetchRecords (String query)
+	public List<EmbeddingMatch<TextSegment>> fetchRecords(String category, String query)//vj6
 	{	
 		EmbeddingModel embdgModel= modelSvc.getEmbeddingModel();	
 		//EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStore(); //vjl 
-		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests();	
+		
+		//vj6
+		String vectorDbCollection = "collection-gdpr-1";
+		if("employer".equals(category))
+		{
+		  vectorDbCollection = "collection-employer-1";		
+		}
+		
+		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);	//vj6
+		
+		
 		Embedding queryEmbedding = embdgModel.embed (query).content(); 
 		//vj3
 	        return  embdgStore.findRelevant(queryEmbedding, maxResultsToRetrieve, minScoreRelevanceScore);
@@ -88,14 +105,24 @@ public class VectorDataStoreService
 	{
 		System.out.println("\n---- started loading context to Vector DB ");	
 		
-		List<String> lines = new ArrayList<String>();
+		//vj6
+		List<String> lines = new ArrayList<String>();		
+		lines = storeCityData(fileNameWithFullPath, testMode, lines);		
+		insertVectorData (modelSvc.getEmbeddingModel(), lines, testMode, "collection-gdpr-1");
 		
+		//vj6
+		List<String> employerLines = new ArrayList<String>();
+		employerLines = storeEmployerData(fileNameWithFullPath, testMode, employerLines);		
+		insertVectorData (modelSvc.getEmbeddingModel(), employerLines, testMode, "collection-employer-1");
+		
+		System.out.println("---- completed loading context to VectorDB");
+	}
+	
+	//vj6
+    private List<String> storeCityData(String fileNameWithFullPath, boolean testMode, List<String> lines) {
 		if(testMode)
-		{	
-		String testContext = "This instruction is to detect. Given a text, you will respond with fields that indicate person identifiable information. Your response should contain only these specific fields separted by commas. Be very concise in your response. The text is";	
-		lines.add(testContext);
-		
-		testContext = "Nicobar";	
+		{			
+		String testContext = "Nicobar";	
 		lines.add(testContext);	
 		testContext = "North Middle Andaman";	
 		lines.add(testContext);	
@@ -128,17 +155,56 @@ public class VectorDataStoreService
 		{
 			lines = fileUtilsSvc.readFile (fileNameWithFullPath);	
 		}
-		
-		insertVectorData (modelSvc.getEmbeddingModel(), lines, testMode);
-		
-		System.out.println("---- completed loading context to VectorDB");
+		return lines;
 	}
 
+    //vj6
+	private List<String> storeEmployerData(String fileNameWithFullPath, boolean testMode, List<String> lines) {
+			if(testMode)
+			{
+			String testContext = "Emirates Airlines";	
+			lines.add(testContext);	
+			testContext = "Damac Real Estates";	
+			lines.add(testContext);	
+			testContext = "Emaar Real Estates";	
+			lines.add(testContext);	
+			testContext = "Al Ansari Finance";	
+			lines.add(testContext);	
+			testContext = "Dnata Air Cargo";	
+			lines.add(testContext);	
+			testContext = "Aramex Courier";	
+			lines.add(testContext);	
+			testContext = "Etisalat Telecom";	
+			lines.add(testContext);	
+			testContext = "Du Telecom";	
+			lines.add(testContext);	
+			testContext = "ADNOC Oil Corporation";	
+			lines.add(testContext); 
+			testContext = "Carrefour Supermarket"; 
+			lines.add(testContext); 
+			testContext = "Hertz Car Rental"; 
+			lines.add(testContext); 
+			testContext = "DEWA"; 
+			lines.add(testContext); 
+			testContext = "Romano Water Supply"; 
+			lines.add(testContext);
+			testContext = "Centerpoint"; //vj3
+			lines.add(testContext);	
+			}
+			else
+			{
+				lines = fileUtilsSvc.readFile (fileNameWithFullPath);	
+			}
+			return lines;
+		}
 
+	
+	
+	
 	/*	
 	* inserts to VectorDB	
 	*/	
-	private void insertVectorData (EmbeddingModel embeddingModel, List<String> lines, boolean testMode) 
+	private void insertVectorData (EmbeddingModel embeddingModel, List<String> lines, boolean testMode, String vectorDbCollection) 
 	{
 		//vj1
 		for (String text: lines)			
@@ -149,7 +215,7 @@ public class VectorDataStoreService
 			if (testMode)			
 			{
 				System.out.println("---- VectorDB testMode "+testMode);			
-				EmbeddingStore<TextSegment> embdStore = contextLoadSvc.getEmbeddingStoreForTests();			
+				EmbeddingStore<TextSegment> embdStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);
 				if (embdStore!=null) //if VectorDB is running on local
 				{
 					System.out.println("---- VectorDB connection is good ");			
