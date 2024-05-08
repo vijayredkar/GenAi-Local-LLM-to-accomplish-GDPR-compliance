@@ -32,7 +32,7 @@ public class RetrievalService
 		String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = vectorDataSvc.retrieve(contextType, userPrompt); //vj3
+		String contextFromVectorDb = vectorDataSvc.retrieve(contextType, userPrompt);
 		//String contextFromVectorDb = ""; //vj1
 		
 		String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
@@ -48,17 +48,22 @@ public class RetrievalService
 		return response;
 	}
 
-	//vj5
+	//vj6
+	public String orchestrateVectorDBOnly(String text, boolean testMode) 
+	{	
+		return orchestrateVectorDBOnly("city", text, testMode);
+	}
+	
 	/*
 	 * invoke Vector DB
 	 */
-	public String orchestrateVectorDBOnly(String text, boolean testMode) //vj2
+	public String orchestrateVectorDBOnly(String category, String text, boolean testMode) //vj6
 	{	
 		System.out.println("\n---- started orchestrateVectorDBOnly");
 		String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = vectorDataSvc.retrieve(contextType, userPrompt); //vj3
+		String contextFromVectorDb = vectorDataSvc.retrieve(category, contextType, userPrompt); //vj6
 		//String contextFromVectorDb = ""; //vj1
 		
 		//String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
