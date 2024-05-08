@@ -59,17 +59,33 @@ public class DataPrivacyController
 
 	//vj5
 	/*
-	 * endpoint to get a response from the local LLM inference engine 
+	 * endpoint to get a response from the VectorDB 
 	 */
 	@GetMapping("/testVectorDBInvocationOnly")
 	public ResponseEntity<String> invokeVectorDBOnly(@RequestParam("text") String text) 
 	{
 		boolean testMode= true; //vj2
 		System.out.println("\n---- started invokeVectorDBOnly - mode : "+testMode);
-		String response = retrievalSvc.orchestrateVectorDBOnly(text, testMode);
+		String response = retrievalSvc.orchestrateVectorDBOnly(text, testMode);//vj6
 		//String response = ""; //vj1
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
+	
+	
+	//vj6
+		/*
+		 * endpoint to get a response from the VectorDB 
+		 */
+		@GetMapping("/closest-semantic-match")   //city employer
+		public ResponseEntity<String> match(@RequestParam(required=false, defaultValue="city") String category, @RequestParam("text") String text) 
+		{
+			boolean testMode= true; //vj2
+			System.out.println("\n---- started match - mode : "+testMode);
+			String response = retrievalSvc.orchestrateVectorDBOnly(category, text, testMode);
+			//String response = ""; //vj1
+			return new ResponseEntity<>(response, HttpStatus.OK);
+		}
+	
 	
 	//vj5
 	/*
