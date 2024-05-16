@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.awaitility.Durations;
 
+import com.genai.llm.privacy.mgt.utils.Constants;
+
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 
@@ -23,11 +25,25 @@ public class LargeLanguageModelService
 	/*
 	 * Local LLM server : Ollama operations	
 	 */
-	public String generate(String text, boolean testMode) //vj2
+	public String generate(String text, boolean testMode, String llmModel) throws Exception //vj7
 	{
 		
-		Map<String, String> severConfigMap  = gatherConfig(testMode); //vj2	
-		String modelName       = severConfigMap.get("modelName");		
+		Map<String, String> severConfigMap  = gatherConfig(testMode, llmModel); //vj7	
+		
+		String modelName       = severConfigMap.get("modelName");	//default model
+		
+		//vj7
+		if(llmModel !=null && Constants.getValidModelsMap().containsKey(llmModel.trim()))
+		{
+			modelName = llmModel; //user specified model
+		}
+		else
+		{
+			System.out.println("**** Invalid LLM Model requested by user. Exiting");
+			throw new Exception("**** Invalid LLM Model requested by user. Exiting");
+		}
+		System.out.println("---- LLM Model set is "+modelName);
+		
 		Integer llmServerPort  = Integer.parseInt(severConfigMap.get("llmServerPort"));
 		Double llmResponseTemp = Double.parseDouble(severConfigMap.get("llmResponseTemp"));
 				
@@ -39,11 +55,16 @@ public class LargeLanguageModelService
 	    stopLLMServer(ollama); // stop LLM server on the fly.
 	    */	
 		
-	    //vj4
+	    //vj7
 	    //--standalone server invocation
 	    //String llmServerUrl = "http://127.0.0.1:11434"; //vijay hardcoded local machine
 	    //String llmServerUrl = "http://ollama.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded
-              String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded
+        //String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded access from with PG POD only
+		//String llmServerUrl = "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"; //vijay hardcoded access from local machine
+		
+		//vj7	    
+		String llmServerUrl = Constants.getValidModelsMap().get(modelName);
+		
 		
 	    ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);
              //vj5		
@@ -61,7 +82,7 @@ public class LargeLanguageModelService
 	/*
 	 * get server config
 	 */
-	private Map<String, String> gatherConfig(boolean testMode) //vj2
+	private Map<String, String> gatherConfig(boolean testMode, String llmModel) //vj7
 	{
 		Map<String, String> llmServerConfig = new HashMap<String, String>();
 		
@@ -69,7 +90,7 @@ public class LargeLanguageModelService
 		String resoucePath = currentDir + "\\"+ "\\src\\main\\resources\\application.properties";
 		
 		//vj5
-		String modelName       = "llama3";		
+		String modelName       = llmModel; //vj7	
 		String llmServerPort   = "11434";
 		String llmResponseTemp = "0.9";
 		
