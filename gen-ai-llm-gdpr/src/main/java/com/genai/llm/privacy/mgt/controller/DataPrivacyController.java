@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind. annotation. RestController;
 import com.genai.llm.privacy.mgt.service.RetrievalService;
 import com.genai.llm.privacy.mgt.service.VectorDataStoreService;
-
+//vj7
 @RestController
 @RequestMapping(value="/gen-ai/v1/llm")
 public class DataPrivacyController 
@@ -48,11 +48,11 @@ public class DataPrivacyController
 	*/
 	
 	@GetMapping("/retrieve")	
-	public ResponseEntity<String> retrieve (@RequestParam("text") String text)
+	public ResponseEntity<String> retrieve (@RequestParam("text") String text, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
 	{	
 		boolean testMode= true; //vj2
 		System.out.println("\n---- started retrieve flow - mode : "+testMode);
-		String response = retrievalSvc.orchestrate(text, testMode);	
+		String response = retrievalSvc.orchestrate(text, testMode, llmModel);	
 		//string response; //vj1
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
@@ -92,11 +92,11 @@ public class DataPrivacyController
 	 * endpoint to get a response from the local LLM inference engine 
 	 */
 	@GetMapping("/testLLMServerInvocationOnly")
-	public ResponseEntity<String> invokeLLMServerOnlyWithSmallPayload(@RequestParam("text") String text)
+	public ResponseEntity<String> invokeLLMServerOnlyWithSmallPayload(@RequestParam("text") String text, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
 	{
 		boolean testMode= true; //vj2
 		System.out.println("\n---- started invokeLLMServerOnlyWithSmallPayload - mode : "+testMode);
-		String response = retrievalSvc.orchestrateLLMServerOnly(text, testMode);
+		String response = retrievalSvc.orchestrateLLMServerOnly(text, testMode, llmModel);
 		//String response = ""; //vj1
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
@@ -108,11 +108,11 @@ public class DataPrivacyController
 		 * endpoint to get a response from the local LLM inference engine 
 		 */
 		@PostMapping("/testLLMServerInvocationOnly")
-		public ResponseEntity<String> invokeLLMServerOnlyWithBigPayload(@RequestBody String text, @RequestParam(value = "context", required = false) String context)
+		public ResponseEntity<String> invokeLLMServerOnlyWithBigPayload(@RequestBody String text, @RequestParam(value = "context", required = false) String context, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
 		{
 			boolean testMode= true; //vj2
-			System.out.println("\n---- started invokeLLMServerOnlyWithBigPayload - mode : "+testMode);
-			String response = retrievalSvc.orchestrateLLMServerOnlyWithBigPayload(text, testMode, context);
+			System.out.println("\n---- started invokeLLMServerOnlyWithBigPayload - mode : "+testMode + " llmModel : "+llmModel);
+			String response = retrievalSvc.orchestrateLLMServerOnlyWithBigPayload(text, testMode, context, llmModel);//vj7
 			//String response = ""; //vj1
 			return new ResponseEntity<>(response, HttpStatus.OK);
 		}
