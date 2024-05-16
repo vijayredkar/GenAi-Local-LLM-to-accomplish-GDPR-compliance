@@ -3,6 +3,7 @@ package com.genai.llm.privacy.mgt.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import jakarta.annotation.PostConstruct;
 
@@ -26,7 +27,7 @@ public class RetrievalService
 	/*
 	 * LLM - RAG orchestration operations
 	 */
-	public String orchestrate(String text, boolean testMode) //vj2
+	public String orchestrate(String text, boolean testMode, String llmModel) throws Exception//vj7
 	{	
 		System.out.println("\n---- started LLM - RAG orchestrations");
 		String userPrompt = text;
@@ -40,7 +41,7 @@ public class RetrievalService
 
 		//vj4
 		//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
-		String response = largeLangModelSvc.generate(promptWithFullContext, testMode);
+		String response = largeLangModelSvc.generate(promptWithFullContext, testMode, llmModel);//vj7
 		//String response = contextFromVectorDb;
 		//System.out.println("**** Ollama LLM server de-activated");
 		
@@ -84,7 +85,7 @@ public class RetrievalService
 	/*
 	 * invoke LLM engine
 	 */
-	public String orchestrateLLMServerOnly(String text, boolean testMode) //vj2
+	public String orchestrateLLMServerOnly(String text, boolean testMode, String llmModel) throws Exception //vj7
 	{	
 		System.out.println("\n---- started orchestrateLLMServerOnly");
 		String userPrompt = text;
@@ -100,7 +101,7 @@ public class RetrievalService
 		
 		//vj3
 		//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
-		String response = largeLangModelSvc.generate(promptWithFullContext, testMode);//vj2
+		String response = largeLangModelSvc.generate(promptWithFullContext, testMode, llmModel);//vj7
 		//String response = contextFromVectorDb;
 		//System.out.println("**** Ollama LLM server de-activated");
 		
@@ -112,7 +113,7 @@ public class RetrievalService
 		/*
 		 * invoke LLM engine
 		 */
-		public String orchestrateLLMServerOnlyWithBigPayload(String text, boolean testMode, String context) //vj2
+		public String orchestrateLLMServerOnlyWithBigPayload(String text, boolean testMode, String context, String llmModel) throws Exception //vj7
 		{	
 			System.out.println("\n---- started orchestrateLLMServerOnlyWithBigPayload");
 			String userPrompt = text;
@@ -138,7 +139,7 @@ public class RetrievalService
 			
 			//vj3
 			//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
-			String response = largeLangModelSvc.generate(promptWithFullContext, testMode);//vj2
+			String response = largeLangModelSvc.generate(promptWithFullContext, testMode, llmModel);//vj7
 			//String response = contextFromVectorDb;
 			//System.out.println("**** Ollama LLM server de-activated");
 			
