@@ -2,6 +2,9 @@ package com.genai.llm.privacy.mgt.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype. Service;
+
+import com.genai.llm.privacy.mgt.utils.Constants;
+
 import jakarta.annotation. PostConstruct;
 
 @Service
@@ -36,7 +39,12 @@ public class AppConfigLoadService
 		}
 			
 		vectorDataSvc.load(resourcePath, true ); //vj1		
-		//String filePath = getClass().getClassLoader ().getResource (filetiame].getPile ();		
+		//String filePath = getClass().getClassLoader ().getResource (filetiame].getPile ();	
+		
+		
+		Constants.addModelsToMap();//vj7
+		System.out.println(" addModelsToMap done");	
+		
 		System.out.println(" completed initial context load on startup");
 		}
 }
