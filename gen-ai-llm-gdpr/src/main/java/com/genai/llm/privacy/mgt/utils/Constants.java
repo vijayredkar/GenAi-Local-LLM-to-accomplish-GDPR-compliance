@@ -31,7 +31,7 @@ public class Constants {
 		{  
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			validLlmModels.put(modelName, "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
 			//validLlmModels.put(modelName, "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 		else if("llama2".equals(modelName))
