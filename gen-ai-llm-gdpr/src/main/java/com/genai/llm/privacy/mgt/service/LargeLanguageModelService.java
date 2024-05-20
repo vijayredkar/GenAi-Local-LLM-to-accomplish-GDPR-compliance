@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,8 +14,13 @@ import org.testcontainers.shaded.org.awaitility.Durations;
 
 import com.genai.llm.privacy.mgt.utils.Constants;
 
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
+import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
+import dev.langchain4j.model.output.Response;
 
 @Service
 public class LargeLanguageModelService 
@@ -64,16 +70,45 @@ public class LargeLanguageModelService
 		
 		//vj7	    
 		String llmServerUrl = Constants.getValidModelsMap().get(modelName);
+		String llmResponse = "";
 		
 		
-	    ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);
-             //vj5		
-	     //text = "What is your name?";         //vijay hardcoded		
-	     //text = "What is the capital of Oman?"; //vijay hardcoded
+		//vj8
 	     System.out.println("\n---- Started local LLM invocation for user input : "+ text);
 	     System.out.println("---- Generating with modelName : "+ modelName);
 		
-	     String llmResponse = model.generate(text);	    
+	     //vj8  regular o/p
+	    //ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);		    
+	    //llmResponse = model.generate(text);	  
+	     
+	     
+	     
+	     //vj8 streaming o/p  start
+	     StreamingChatLanguageModel modelStreaming = buildLLMResponseModelStandAloneServerStreaming(llmServerUrl, modelName, llmResponseTemp);		    
+	     CompletableFuture<Response<AiMessage>> futureResponse = new CompletableFuture<>();
+	        modelStreaming.generate(text, new StreamingResponseHandler<AiMessage>() {
+
+	            @Override
+	            public void onNext(String token) {
+	                System.out.print(token);
+	            }
+
+	            @Override
+	            public void onComplete(Response<AiMessage> response) {
+	                futureResponse.complete(response);
+	            }
+
+	            @Override
+	            public void onError(Throwable error) {
+	                futureResponse.completeExceptionally(error);
+	            }
+	        });
+	     Response<AiMessage> aiMsg = futureResponse.join();
+	     llmResponse  = aiMsg.content().text();	     
+	     
+	   //vj8 streaming o/p  stop
+	     
+	     
 	     System.out.println("\n---- Got local LLM response : "+ llmResponse);	    	    
 	    
 	    return llmResponse;
@@ -171,5 +206,23 @@ public class LargeLanguageModelService
 								        			   .timeout(Durations.TEN_MINUTES) //best is to NOT change this
 								        			   .build();
 			return model;
+	}
+	 
+	 //vj8
+	 /*
+	  * standalone LLM server instance.
+	  * be sure to have Ollama server running 
+	  */
+	 private StreamingChatLanguageModel buildLLMResponseModelStandAloneServerStreaming(String llmServerUrl, String modelName, double llmResponseTemp) 
+	 {
+		 StreamingChatLanguageModel model = OllamaStreamingChatModel.builder()
+													  			   //.baseUrl("http://127.0.0.1:11434") //server running on localhost
+																   .baseUrl(llmServerUrl)
+													  			   .modelName(modelName)
+													  			   .temperature(llmResponseTemp)
+													  			   .timeout(Durations.TEN_MINUTES) //best is to NOT change this
+													  			   .build();
+		 
+		 return model;
 	}
 }
