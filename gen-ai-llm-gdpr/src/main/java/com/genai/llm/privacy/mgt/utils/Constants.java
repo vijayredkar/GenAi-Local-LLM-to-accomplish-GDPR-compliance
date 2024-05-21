@@ -30,51 +30,51 @@ public class Constants {
 		{  
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			//validLlmModels.put(modelName, "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			validLlmModels.put(modelName, "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			validLlmModels.put(modelName, "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			//validLlmModels.put(modelName, "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 		else if("llama2".equals(modelName))
 		{	
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 		else if("phi3:mini".equals(modelName))
 		{			
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 		//vj9
 		else if("model-leap-1".equals(modelName))
 		{			
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 		else if("model-leap-controller-1".equals(modelName))
 		{			
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 		else if("model-leap-handler-1".equals(modelName))
 		{			
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 		else if("model-leap-repository-1".equals(modelName))
 		{			
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 	}
 
