@@ -8,8 +8,7 @@ import java.util.Map;
 
 public class Constants {
 
-	//private static String[] validModelsArr = {"llama2","llama3", "llama3:70b", "phi3:mini"};
-	private static String[] validModelsArr = {"llama2","llama3", "phi3:mini"};
+	private static String[] validModelsArr = {"llama2","llama3", "phi3:mini", "custom-model-1", "model-leap-1", "model-leap-controller-1", "model-leap-handler-1", "model-leap-repository-1"};//vj9
 	private final List<String> validModelsList = new ArrayList<String>();	
 	private static Map<String, String> validLlmModels = new HashMap<String,String>();
 	
@@ -27,26 +26,55 @@ public class Constants {
 	
 	private static void createValidLlmModelsMap(String modelName) 
 	{
-		if("llama3".equals(modelName))
+		if("llama3".equals(modelName) || "custom-model-1".equals(modelName))
 		{  
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			//validLlmModels.put(modelName, "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			validLlmModels.put(modelName, "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 		else if("llama2".equals(modelName))
 		{	
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 		else if("phi3:mini".equals(modelName))
 		{			
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+		}
+		//vj9
+		else if("model-leap-1".equals(modelName))
+		{			
+			//vj7
+			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
+			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+		}
+		else if("model-leap-controller-1".equals(modelName))
+		{			
+			//vj7
+			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
+			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+		}
+		else if("model-leap-handler-1".equals(modelName))
+		{			
+			//vj7
+			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
+			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
+		}
+		else if("model-leap-repository-1".equals(modelName))
+		{			
+			//vj7
+			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
+			//validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
+			validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
 	}
 
