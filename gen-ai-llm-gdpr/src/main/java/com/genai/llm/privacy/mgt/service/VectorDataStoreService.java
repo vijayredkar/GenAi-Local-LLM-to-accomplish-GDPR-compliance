@@ -26,6 +26,12 @@ public class VectorDataStoreService
 	@Value("${embeddings.min.score:0.5}")	
 	double minScoreRelevanceScore;
 	
+	@Value("${vector.db.index.flowtrain:collection-flowtrain-1}")	
+	String vectorDbIndexFlowtrain;
+	
+	@Value("${vector.db.load.flowtrain:Y}")	
+	String vectorDbLoadFlowtrain;
+	
 	@Autowired	
 	private ModelService modelSvc;
 	
@@ -40,6 +46,12 @@ public class VectorDataStoreService
 	public String retrieve(String contextType, String userPrompt)
 	{
 		return retrieve("city", contextType, userPrompt);
+	}
+	
+	//vj10
+	public String retrieveFlowTrain(String contextType, String userPrompt)
+	{
+		return retrieve("flowtrain", contextType, userPrompt);
 	}
 	
 	/* 
@@ -87,9 +99,12 @@ public class VectorDataStoreService
 		{
 		  vectorDbCollection = "collection-employer-1";		
 		}
+		else if("flowtrain".equals(category)) //vj10
+		{
+		  vectorDbCollection = vectorDbIndexFlowtrain; // "collection-flowtrain-1";
+		}
 		
 		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);	//vj6
-		
 		
 		Embedding queryEmbedding = embdgModel.embed (query).content(); 
 		//vj3
@@ -114,6 +129,14 @@ public class VectorDataStoreService
 		List<String> employerLines = new ArrayList<String>();
 		employerLines = storeEmployerData(fileNameWithFullPath, testMode, employerLines);		
 		insertVectorData (modelSvc.getEmbeddingModel(), employerLines, testMode, "collection-employer-1");
+		
+		//vj10
+		if("Y".equals(vectorDbLoadFlowtrain))
+		{
+			List<String> flowTrainLines = new ArrayList<String>();
+			flowTrainLines = storeFlowTrainData(fileNameWithFullPath, testMode, flowTrainLines);		
+			insertVectorData (modelSvc.getEmbeddingModel(), flowTrainLines, testMode, vectorDbIndexFlowtrain); //"collection-flowtrain-1"
+		}
 		
 		System.out.println("---- completed loading context to VectorDB");
 	}
@@ -198,7 +221,42 @@ public class VectorDataStoreService
 			return lines;
 		}
 
-	
+	//vj10
+	private List<String> storeFlowTrainData(String fileNameWithFullPath, boolean testMode, List<String> lines) {
+		if(testMode)
+		{
+		String testContext = "NRE international fund transfer technical flow is invoked with the REST endpoint POST /payment/v1/transfers/external-transfers\r\n" + 
+				"The request flow is then processed by the Java classes and methods in the following sequence:\r\n" + 
+				"class ExternalTransferController and method confirmTransfer.\r\n" + 
+				"class ConfirmExternalTransferHandler and method handle.\r\n" + 
+				"class ValidateExternalTransferCommand and method setPaymentConfirm.\r\n" + 
+				"class EnableCommandToEvent publishes the transaction data to Kafka topic  external-transfer. \r\n" + 
+				"A consumer listening to this topic consumes this message and further processes this fund transfer.\r\n" + 
+				"class UpdatePaymentRequestLogHandler and method handle saves this transaction with the status Processing to the Mongo DB for auditing.\r\n" + 
+				"An HTTP response with a status code of 202 Accepted is sent to the consumer and the flow completes.";	
+		lines.add(testContext);	
+		
+		testContext = "IBAN local fund transfer technical flow is invoked with the REST endpoint POST /payment/v1/transfers/external-transfers\r\n" + 
+				"The request flow is then processed by the Java classes and methods in the following sequence:\r\n" + 
+				"class ExternalTransferController and method confirmTransfer.\r\n" + 
+				"class ConfirmExternalTransferHandler and method handle.\r\n" + 
+				"class InstitutionsViewQueryHandler and method handle checks if the sender and receiver institution information is valid.\r\n" + 
+				"class InstitutionsPHQueryHandler and method handle checks if the institution information is valid in PaymentHub record keeping system.\r\n" + 
+				"class ConfirmExternalTransferWithoutOrderIdHandler and method handle.\r\n" + 
+				"class ValidateExternalTransferCommand and method setPaymentConfirm.\r\n" + 
+				"class EnableCommandToEvent publishes the transaction data to Kafka topic  external-transfer. \r\n" + 
+				"A consumer listening to this topic consumes this message and further processes this fund transfer.\r\n" + 
+				"class UpdatePaymentRequestLogHandler and method handle saves this transaction with the status Processing to the Mongo DB for auditing.\r\n" + 
+				"An HTTP response with a status code of 202 Accepted is sent to the consumer and the flow completes.";	
+		lines.add(testContext);
+		}
+		else
+		{
+			lines = fileUtilsSvc.readFile (fileNameWithFullPath);	
+		}
+		return lines;
+	}
+
 	
 	
 	/*	
