@@ -57,6 +57,17 @@ public class DataPrivacyController
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
+	//vj10
+	@GetMapping("/retrieve-flowtrain")	
+	public ResponseEntity<String> retrieveFlowTrain (@RequestParam("text") String text, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
+	{	
+		boolean testMode= true;
+		System.out.println("\n---- started retrieveFlowTrain flow - mode : "+testMode);
+		String response = retrievalSvc.orchestrateFlowTrain(text, testMode, llmModel);	
+		//string response;
+		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
+	
 	//vj5
 	/*
 	 * endpoint to get a response from the VectorDB 
