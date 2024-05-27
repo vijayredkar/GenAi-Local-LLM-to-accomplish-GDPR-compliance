@@ -48,6 +48,31 @@ public class RetrievalService
 		System.out.println("---- completed LLM - RAG orchestrations with response : \n"+ response);
 		return response;
 	}
+	
+	//vj10
+	/*
+	 * LLM - RAG orchestration operations
+	 */
+	public String orchestrateFlowTrain(String text, boolean testMode, String llmModel) throws Exception
+	{	
+		System.out.println("\n---- started LLM - RAG orchestrations");
+		String userPrompt = text;
+		
+		//--step -1  : enhance the user prompt with the context information from the DB 
+		String contextFromVectorDb = vectorDataSvc.retrieveFlowTrain(contextType, userPrompt);
+		//String contextFromVectorDb = ""; 
+		
+		String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
+		System.out.println("---- constructed RAG promptWithFullContext \n"+promptWithFullContext);		
+
+		//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
+		String response = largeLangModelSvc.generate(promptWithFullContext, testMode, llmModel);
+		//String response = contextFromVectorDb;
+		//System.out.println("**** Ollama LLM server de-activated");
+		
+		System.out.println("---- completed LLM - RAG orchestrations with response : \n"+ response);
+		return response;
+	}
 
 	//vj6
 	public String orchestrateVectorDBOnly(String text, boolean testMode) 
