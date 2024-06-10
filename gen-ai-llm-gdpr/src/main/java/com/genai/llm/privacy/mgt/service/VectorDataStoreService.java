@@ -28,6 +28,12 @@ public class VectorDataStoreService
 	
 	@Value("${vector.db.index.flowtrain:collection-flowtrain-1}")	
 	String vectorDbIndexFlowtrain;
+
+        @Value("${vector.db.index.apiinfo:collection-apiinfo-1}")//vj11
+	String vectorDbIndexApiinfo;
+	
+	@Value("${vector.db.load.apiinfo:Y}")//vj11
+	String vectorDbLoadApiinfo;
 	
 	@Value("${vector.db.load.flowtrain:Y}")	
 	String vectorDbLoadFlowtrain;
@@ -103,6 +109,10 @@ public class VectorDataStoreService
 		{
 		  vectorDbCollection = vectorDbIndexFlowtrain; // "collection-flowtrain-1";
 		}
+		else if("apiinfo".equals(category)) //vj11
+		{
+		  vectorDbCollection = vectorDbIndexApiinfo; // "collection-apiinfo-1";
+		}
 		
 		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);	//vj6
 		
@@ -137,7 +147,13 @@ public class VectorDataStoreService
 			flowTrainLines = storeFlowTrainData(fileNameWithFullPath, testMode, flowTrainLines);		
 			insertVectorData (modelSvc.getEmbeddingModel(), flowTrainLines, testMode, vectorDbIndexFlowtrain); //"collection-flowtrain-1"
 		}
-		
+		//vj11
+		if("Y".equals(vectorDbLoadApiinfo))
+		{
+			List<String> apiInfoLines = new ArrayList<String>();
+			apiInfoLines = storeApiInfoData(fileNameWithFullPath, testMode, apiInfoLines);		
+			insertVectorData (modelSvc.getEmbeddingModel(), apiInfoLines, testMode, vectorDbIndexApiinfo);
+		}
 		System.out.println("---- completed loading context to VectorDB");
 	}
 	
@@ -249,6 +265,43 @@ public class VectorDataStoreService
 				"class UpdatePaymentRequestLogHandler and method handle saves this transaction with the status Processing to the Mongo DB for auditing.\r\n" + 
 				"An HTTP response with a status code of 202 Accepted is sent to the consumer and the flow completes.";	
 		lines.add(testContext);
+		}
+		else
+		{
+			lines = fileUtilsSvc.readFile (fileNameWithFullPath);	
+		}
+		return lines;
+	}
+	//vj11
+	private List<String> storeApiInfoData(String fileNameWithFullPath, boolean testMode, List<String> lines) {
+		if(testMode)
+		{
+			String testContext = "API to insert customer data with version 1 is POST https://bawabauat.clouduat.emiratesnbd.com/banking/customers/v1/customer. Request body JSON is {\"id\": \"CUE-12345\", \"cif\": \"7786543\", \"salutation\": \"MR\", \"firstName\": \"John\", \"firstNameInArabic\": \"Alam\", \"middleName\": \"Smith\", \"middleNameInArabic\": \"Jahan\"}. API Response on success is HttpStatusCode 201 Created.";
+			lines.add(testContext);	
+			
+			testContext = "API to insert customer data with version 2 is POST https://bawabauat.clouduat.emiratesnbd.com/banking/customers/v2/customer.  Request body JSON is {\"id\": \"CUE-12345\", \"cif\": \"7786543\",\"salutation\": \"MR\", \"firstName\": \"John\", \"firstNameInArabic\": \"Alam\", \"middleName\": \"Smith\", \"middleNameInArabic\": \"Jahan\", \"email\": \"jahan@gmail.com\", \"phone\": \"97177788899\", \"address\": \"21 Baker St. Al Raffa, Dubai\"}. API Response on success is HttpStatusCode 201 Created.";
+			lines.add(testContext);
+			
+			testContext = "API to fetch customer data with version 1 is GET https://bawabauat.clouduat.emiratesnbd.com/banking/customers/v1/customer/CUE-LNoQAK80IN.  Response body on success is {\"id\": \"CUE-12345\", \"cif\": \"7786543\",\"salutation\": \"MR\", \"firstName\": \"John\", \"firstNameInArabic\": \"Alam\", \"middleName\": \"Smith\", \"middleNameInArabic\": \"Jahan\"}.";
+			lines.add(testContext);
+			
+			testContext = "API to fetch customer data with version 2 is GET https://bawabauat.clouduat.emiratesnbd.com/banking/customers/v2/customer/CUE-LNoQAK80IN?type=corporate.  Response body on success is {\"id\": \"CUE-12345\", \"cif\": \"7786543\",\"salutation\": \"MR\", \"firstName\": \"John\", \"firstNameInArabic\": \"Alam\", \"middleName\": \"Smith\", \"middleNameInArabic\": \"Jahan\", \"email\": \"jahan@gmail.com\", \"phone\": \"97177788899\", \"address\": \"21 Baker St. Al Raffa, Dubai\", \"emiratesId\": \"33322244455\", \"citizenship\": \"EGP\", \"occupation\": \"engineer\"}.";
+			lines.add(testContext);
+			
+			testContext = "API to update customer data with version 1 is PUT https://bawabauat.clouduat.emiratesnbd.com/banking/customers/v1/customer/CUE-LNoQAK80IN. API Request body JSON is {\"id\": \"CUE-12345\", \"cif\": \"7786543\", \"salutation\": \"MR\", \"firstName\": \"John\", \"firstNameInArabic\": \"Alam\", \"middleName\": \"Smith\", \"middleNameInArabic\": \"Jahan\"}. API Response on success is HttpStatusCode 202 Accepted.";
+			lines.add(testContext);
+			
+			testContext = "API to insert loan data with version 1 is POST https://bawabauat.clouduat.emiratesnbd.com/banking/loans/v1/loan/LNA-LNoQAK80IN. API Request body JSON is {\"id\": \"LNA-12345\",\"amount\": \"20000\",\"dueDate\": \"20-12-2025\", \"cif\": \"7786543\", \"salutation\": \"MR\", \"firstName\": \"John\", \"firstNameInArabic\": \"Alam\", \"middleName\": \"Smith\", \"middleNameInArabic\": \"Jahan\"}. API Response on success is HttpStatusCode 201 Created.";
+			lines.add(testContext);
+			
+			testContext = "API to update loan data with version 1 is PUT https://bawabauat.clouduat.emiratesnbd.com/banking/loans/v1/loan/LNA-LNoQAK80IN. API Request body JSON is {\"id\": \"LNA-12345\",\"amount\": \"20000\",\"dueDate\": \"20-12-2025\", \"cif\": \"7786543\", \"salutation\": \"MR\", \"firstName\": \"John\", \"firstNameInArabic\": \"Alam\", \"middleName\": \"Smith\", \"middleNameInArabic\": \"Jahan\"}. API Response on success is HttpStatusCode 202 Accepted.";
+			lines.add(testContext);
+			
+			testContext = "API to fetch loan data with version 1 is GET https://bawabauat.clouduat.emiratesnbd.com/banking/loans/v1/loan/LNA-LNoQAK80IN.  Response body on success is {\"id\": \"LNA-12345\",\"amount\": \"20000\",\"dueDate\": \"20-12-2025\", \"cif\": \"7786543\",\"salutation\": \"MR\", \"firstName\": \"John\", \"firstNameInArabic\": \"Alam\", \"middleName\": \"Smith\", \"middleNameInArabic\": \"Jahan\", \"email\": \"jahan@gmail.com\", \"phone\": \"97177788899\", \"address\": \"21 Baker St. Al Raffa, Dubai\", \"emiratesId\": \"33322244455\", \"citizenship\": \"EGP\", \"occupation\": \"engineer\"}.";
+			lines.add(testContext);
+			
+			testContext = "API to fetch loan data with version 2 is GET https://bawabauat.clouduat.emiratesnbd.com/banking/loans/v2/loan/LNA-LNoQAK80IN.  Response body on success is {\"id\": \"LNA-12345\",\"amount\": \"20000\",\"dueDate\": \"20-12-2025\", \"cif\": \"7786543\",\"salutation\": \"MR\", \"firstName\": \"John\", \"firstNameInArabic\": \"Alam\", \"middleName\": \"Smith\", \"middleNameInArabic\": \"Jahan\", \"email\": \"jahan@gmail.com\", \"phone\": \"97177788899\", \"address\": \"21 Baker St. Al Raffa, Dubai\", \"emiratesId\": \"33322244455\", \"citizenship\": \"EGP\", \"occupation\": \"engineer\"}.";
+			lines.add(testContext);
 		}
 		else
 		{
