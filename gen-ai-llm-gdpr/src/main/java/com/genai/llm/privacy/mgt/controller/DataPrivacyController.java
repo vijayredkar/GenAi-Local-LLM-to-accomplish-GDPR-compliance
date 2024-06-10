@@ -9,21 +9,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation. RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind. annotation. RestController;
+
 import com.genai.llm.privacy.mgt.service.RetrievalService;
-import com.genai.llm.privacy.mgt.service.VectorDataStoreService;
-//vj7
+
 @RestController
 @RequestMapping(value="/gen-ai/v1/llm")
 public class DataPrivacyController 
 {
-	@Autowired //vj
+	@Autowired
 	private RetrievalService retrievalSvc;
 
-	/* vj1
-	@Autowired
-	private VectorDataStoreService vectorDataSvc;
-	*/
-	
 	/*
 	endpoint to load newer contexts provided by the user
 	*/
@@ -37,94 +32,92 @@ public class DataPrivacyController
 			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 		}
 		
-		//vectorDataSvc.load(fileNameWithFullPath); vj1
-		
 		response = "Vector DB new context loaded";	
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
 	/*
 	endpoint to get a response from the local inference engine
-	*/
-	
+	*/	
 	@GetMapping("/retrieve")	
 	public ResponseEntity<String> retrieve (@RequestParam("text") String text, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
 	{	
-		boolean testMode= true; //vj2
+		boolean testMode= true; 
 		System.out.println("\n---- started retrieve flow - mode : "+testMode);
 		String response = retrievalSvc.orchestrate(text, testMode, llmModel);	
-		//string response; //vj1
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
-	//vj10
 	@GetMapping("/retrieve-flowtrain")	
 	public ResponseEntity<String> retrieveFlowTrain (@RequestParam("text") String text, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
 	{	
 		boolean testMode= true;
 		System.out.println("\n---- started retrieveFlowTrain flow - mode : "+testMode);
-		String response = retrievalSvc.orchestrateFlowTrain(text, testMode, llmModel);	
-		//string response;
+		String response = retrievalSvc.orchestrateFlowTrain(text, testMode, llmModel);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
-	//vj5
+	//vj11
+	/*
+	 SAHAB spec info
+	*/
+	@GetMapping("/retrieve-apiinfo")	
+	public ResponseEntity<String> retrieveApiInfo (@RequestParam("text") String text, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
+	{	
+		boolean testMode= true;
+		System.out.println("\n---- started retrieveApiInfo flow - mode : "+testMode);
+		String response = retrievalSvc.orchestrateApiInfo(text, testMode, llmModel);
+		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
+	
 	/*
 	 * endpoint to get a response from the VectorDB 
 	 */
 	@GetMapping("/testVectorDBInvocationOnly")
 	public ResponseEntity<String> invokeVectorDBOnly(@RequestParam("text") String text) 
 	{
-		boolean testMode= true; //vj2
+		boolean testMode= true; 
 		System.out.println("\n---- started invokeVectorDBOnly - mode : "+testMode);
-		String response = retrievalSvc.orchestrateVectorDBOnly(text, testMode);//vj6
+		String response = retrievalSvc.orchestrateVectorDBOnly(text, testMode);
 		//String response = ""; //vj1
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
+	/*
+	 * endpoint to get a response from the VectorDB 
+	 */
+	@GetMapping("/closest-semantic-match")   //city employer
+	public ResponseEntity<String> match(@RequestParam(required=false, defaultValue="city") String category, @RequestParam("text") String text) 
+	{
+		boolean testMode= true; 
+		System.out.println("\n---- started match - mode : "+testMode);
+		String response = retrievalSvc.orchestrateVectorDBOnly(category, text, testMode);
+		//String response = ""; //vj1
+		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
 	
-	//vj6
-		/*
-		 * endpoint to get a response from the VectorDB 
-		 */
-		@GetMapping("/closest-semantic-match")   //city employer
-		public ResponseEntity<String> match(@RequestParam(required=false, defaultValue="city") String category, @RequestParam("text") String text) 
-		{
-			boolean testMode= true; //vj2
-			System.out.println("\n---- started match - mode : "+testMode);
-			String response = retrievalSvc.orchestrateVectorDBOnly(category, text, testMode);
-			//String response = ""; //vj1
-			return new ResponseEntity<>(response, HttpStatus.OK);
-		}
-	
-	
-	//vj5
 	/*
 	 * endpoint to get a response from the local LLM inference engine 
 	 */
 	@GetMapping("/testLLMServerInvocationOnly")
 	public ResponseEntity<String> invokeLLMServerOnlyWithSmallPayload(@RequestParam("text") String text, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
 	{
-		boolean testMode= true; //vj2
+		boolean testMode= true; 
 		System.out.println("\n---- started invokeLLMServerOnlyWithSmallPayload - mode : "+testMode);
 		String response = retrievalSvc.orchestrateLLMServerOnly(text, testMode, llmModel);
 		//String response = ""; //vj1
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
-	
-	
-	//vj5
-		/*
-		 * endpoint to get a response from the local LLM inference engine 
-		 */
-		@PostMapping("/testLLMServerInvocationOnly")
-		public ResponseEntity<String> invokeLLMServerOnlyWithBigPayload(@RequestBody String text, @RequestParam(value = "context", required = false) String context, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
-		{
-			boolean testMode= true; //vj2
-			System.out.println("\n---- started invokeLLMServerOnlyWithBigPayload - mode : "+testMode + " llmModel : "+llmModel);
-			String response = retrievalSvc.orchestrateLLMServerOnlyWithBigPayload(text, testMode, context, llmModel);//vj7
-			//String response = ""; //vj1
-			return new ResponseEntity<>(response, HttpStatus.OK);
-		}
+	/*
+	 * endpoint to get a response from the local LLM inference engine 
+	 */
+	@PostMapping("/testLLMServerInvocationOnly")
+	public ResponseEntity<String> invokeLLMServerOnlyWithBigPayload(@RequestBody String text, @RequestParam(value = "context", required = false) String context, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel) throws Exception
+	{
+		boolean testMode= true;
+		System.out.println("\n---- started invokeLLMServerOnlyWithBigPayload - mode : "+testMode + " llmModel : "+llmModel);
+		String response = retrievalSvc.orchestrateLLMServerOnlyWithBigPayload(text, testMode, context, llmModel);
+		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
 }
