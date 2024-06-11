@@ -14,6 +14,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.util.ArrayList;
+import java.util.List;
 
 @SpringBootApplication
 public class DataPrivacyMgtApplication 
