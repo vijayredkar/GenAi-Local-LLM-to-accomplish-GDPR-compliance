@@ -77,10 +77,15 @@ public class ContextLoadService
 				String vectorDbUrl        = "http://127.0.0.1:8000";
 				String vectorDbCollection = "collection-gdpr-1";	
 				*/
-				// PG env with Docker  
-				String vectorDbUrl        = "http://chroma.bawabaai-gpt.svc.cluster.local:8000";    //access within PG POD only
-				//String vectorDbUrl        = "https://chroma-bawabaai-gpt.pgocp.uat.emiratesnbd.com";  //access from local machine	
-				
+				// PG env with Docker  //vj12
+				//String vectorDbUrl        = "http://chroma.bawabaai-gpt.svc.cluster.local:8000";    //access within PG POD only
+				String vectorDbUrl        = "https://chroma-bawabaai-gpt.pgocp.uat.emiratesnbd.com";  //access Chroma running on PG-OCP  from local machine	
+				String vectorDbUrlOnVM    = "http://lventibapp501u.uat.emiratesnbd.com:8000";     //access Chroma running on VM from local machine	
+								
+				if("Bawaba-PG-VM".equals(System.getProperty("deployment_env")))//vj12
+				{  //this 40GB model runs on the VM and not PG-OCP
+					vectorDbUrl = vectorDbUrlOnVM;
+				}
 				System.out.println("---- started connect to VectorDB for Tests " + " vectorDbUrl " + vectorDbUrl + " vectorDbCollection: " + vectorDbCollection);
 				embeddingStore = ChromaEmbeddingStore.builder()
 													.baseUrl (vectorDbUrl)
