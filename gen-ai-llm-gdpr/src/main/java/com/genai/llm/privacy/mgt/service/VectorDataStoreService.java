@@ -37,6 +37,12 @@ public class VectorDataStoreService
 	
 	@Value("${vector.db.load.flowtrain:Y}")	
 	String vectorDbLoadFlowtrain;
+
+	@Value("${vector.db.load.city:Y}")//vj12
+	String vectorDbLoadCity;
+	
+	@Value("${vector.db.load.employer:Y}")//vj12
+	String vectorDbLoadEmployer;
 	
 	@Autowired	
 	private ModelService modelSvc;
@@ -54,10 +60,10 @@ public class VectorDataStoreService
 		return retrieve("city", contextType, userPrompt);
 	}
 	
-	//vj10
-	public String retrieveFlowTrain(String contextType, String userPrompt)
+	//vj12
+	public String retrieveByCategory(String category, String contextType, String userPrompt)//vj12
 	{
-		return retrieve("flowtrain", contextType, userPrompt);
+		return retrieve(category, contextType, userPrompt);
 	}
 	
 	/* 
