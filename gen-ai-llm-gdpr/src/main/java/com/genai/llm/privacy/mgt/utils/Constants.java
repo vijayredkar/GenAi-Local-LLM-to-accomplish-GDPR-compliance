@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class Constants {
 
-	private static String[] validModelsArr = {"llama2","llama3", "phi3:mini", "custom-model-1", "model-leap-1", "model-leap-controller-1", "model-leap-handler-1", "model-leap-repository-1"};//vj9
+	private static String[] validModelsArr = {"llama2","llama3", "phi3:mini", "custom-model-1", "model-leap-1", "model-leap-controller-1", "model-leap-handler-1", "model-leap-repository-1", "llama3-70b-model-1"};//vj12
 	private final List<String> validModelsList = new ArrayList<String>();	
 	private static Map<String, String> validLlmModels = new HashMap<String,String>();
 	
@@ -33,6 +33,12 @@ public class Constants {
 			validLlmModels.put(modelName, "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
 			//validLlmModels.put(modelName, "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
 		}
+		else if("llama3-70b-model-1".equals(modelName))//vj12
+		{	
+			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
+			validLlmModels.put(modelName, "http://ollama-llama3:11434");  //VM POD access
+			//validLlmModels.put(modelName, "http://lventibapp501u.uat.emiratesnbd.com:11434"); //Local mc access to VM
+		}			
 		else if("llama2".equals(modelName))
 		{	
 			//vj7
