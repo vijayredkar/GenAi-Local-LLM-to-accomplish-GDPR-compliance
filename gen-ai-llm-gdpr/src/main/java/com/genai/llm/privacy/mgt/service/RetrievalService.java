@@ -59,7 +59,7 @@ public class RetrievalService
 		String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = vectorDataSvc.retrieveFlowTrain(contextType, userPrompt);
+		String contextFromVectorDb = vectorDataSvc.retrieveByCategory("flowtrain", contextType, userPrompt);//vj12
 		//String contextFromVectorDb = ""; 
 		
 		String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
@@ -83,13 +83,13 @@ public class RetrievalService
 		String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = vectorDataSvc.retrieveByCategory("apiinfo", contextType, userPrompt);
+		String contextFromVectorDb = vectorDataSvc.retrieveByCategory("apiinfo", contextType, userPrompt);//vj12
 		
 		String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
 		System.out.println("---- constructed RAG promptWithFullContext \n"+promptWithFullContext);		
 
 		//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
-		String response = largeLangModelSvc.generate(promptWithFullContext, testMode, llmModel);
+		String response = largeLangModelSvc.generate(promptWithFullContext, testMode, llmModel);//vj12
 		
 		System.out.println("---- completed LLM - RAG orchestrations with response : \n"+ response);
 		return response;
@@ -110,7 +110,7 @@ public class RetrievalService
 		String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = vectorDataSvc.retrieve(category, contextType, userPrompt); //vj6
+		String contextFromVectorDb = vectorDataSvc.retrieve(category, contextType, userPrompt); //vj12
 		//String contextFromVectorDb = ""; //vj1
 		
 		//String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
