@@ -94,7 +94,7 @@ public class VectorDataStoreService
 	/*
 	* fetches records from VectorDB based on semantic similarities	
 	*/	
-	public List<EmbeddingMatch<TextSegment>> fetchRecords(String category, String query)//vj6
+	public List<EmbeddingMatch<TextSegment>> fetchRecords(String category, String query)//vj12
 	{	
 		EmbeddingModel embdgModel= modelSvc.getEmbeddingModel();	
 		//EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStore(); //vjl 
@@ -130,15 +130,21 @@ public class VectorDataStoreService
 	{
 		System.out.println("\n---- started loading context to Vector DB ");	
 		
-		//vj6
+		//vj12
+		if("Y".equals(vectorDbLoadCity))
+		{
 		List<String> lines = new ArrayList<String>();		
 		lines = storeCityData(fileNameWithFullPath, testMode, lines);		
 		insertVectorData (modelSvc.getEmbeddingModel(), lines, testMode, "collection-gdpr-1");
+		}
 		
-		//vj6
+		//vj12
+		if("Y".equals(vectorDbLoadEmployer))
+		{
 		List<String> employerLines = new ArrayList<String>();
 		employerLines = storeEmployerData(fileNameWithFullPath, testMode, employerLines);		
 		insertVectorData (modelSvc.getEmbeddingModel(), employerLines, testMode, "collection-employer-1");
+		}
 		
 		//vj10
 		if("Y".equals(vectorDbLoadFlowtrain))
@@ -326,7 +332,7 @@ public class VectorDataStoreService
 			if (testMode)			
 			{
 				System.out.println("---- VectorDB testMode "+testMode);			
-				EmbeddingStore<TextSegment> embdStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);
+				EmbeddingStore<TextSegment> embdStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);//vj12
 				if (embdStore!=null) //if VectorDB is running on local
 				{
 					System.out.println("---- VectorDB connection is good ");			
