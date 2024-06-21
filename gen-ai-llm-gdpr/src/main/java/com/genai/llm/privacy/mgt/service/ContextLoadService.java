@@ -78,8 +78,8 @@ public class ContextLoadService
 				String vectorDbCollection = "collection-gdpr-1";	
 				*/
 				// PG env with Docker  //vj12
-				//String vectorDbUrl        = "http://chroma.bawabaai-gpt.svc.cluster.local:8000";    //access within PG POD only
-				String vectorDbUrl        = "https://chroma-bawabaai-gpt.pgocp.uat.emiratesnbd.com";  //access Chroma running on PG-OCP  from local machine	
+				String vectorDbUrl        = "http://chroma.bawabaai-gpt.svc.cluster.local:8000";    //access within PG POD only
+				//String vectorDbUrl        = "https://chroma-bawabaai-gpt.pgocp.uat.emiratesnbd.com";  //access Chroma running on PG-OCP  from local machine	
 				String vectorDbUrlOnVM    = "http://lventibapp501u.uat.emiratesnbd.com:8000";     //access Chroma running on VM from local machine	
 								
 				if("Bawaba-PG-VM".equals(System.getProperty("deployment_env")))//vj12
