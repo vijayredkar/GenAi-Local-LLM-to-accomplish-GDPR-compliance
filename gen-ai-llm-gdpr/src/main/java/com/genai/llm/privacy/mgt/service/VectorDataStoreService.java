@@ -1,5 +1,8 @@
 package com.genai.llm.privacy.mgt.service;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets; 
 import java.nio.file.Files;
@@ -28,21 +31,30 @@ public class VectorDataStoreService
 	
 	@Value("${vector.db.index.flowtrain:collection-flowtrain-1}")	
 	String vectorDbIndexFlowtrain;
-
-        @Value("${vector.db.index.apiinfo:collection-apiinfo-1}")//vj11
-	String vectorDbIndexApiinfo;
+	
+	@Value("${vector.db.index.apiinfo:collection-apiinfo-1}")//vj11
+	String vectorDbIndexApiinfo;	
+	
+	@Value("${vector.db.load.flowtrain:Y}")	
+	String vectorDbLoadFlowtrain;
 	
 	@Value("${vector.db.load.apiinfo:Y}")//vj11
 	String vectorDbLoadApiinfo;
 	
-	@Value("${vector.db.load.flowtrain:Y}")	
-	String vectorDbLoadFlowtrain;
-
+	
 	@Value("${vector.db.load.city:Y}")//vj12
 	String vectorDbLoadCity;
 	
 	@Value("${vector.db.load.employer:Y}")//vj12
 	String vectorDbLoadEmployer;
+	
+	@Value("${vector.db.index.examineflow:collection-examineflow-1}")	//vj14
+	String vectorDbIndexExamineflow;
+	
+	@Value("${vector.db.load.examineflow:Y}")//vj14
+	String vectorDbLoadExamineflow;
+	
+	
 	
 	@Autowired	
 	private ModelService modelSvc;
@@ -57,11 +69,11 @@ public class VectorDataStoreService
 	//vj6
 	public String retrieve(String contextType, String userPrompt)
 	{
-		return retrieve("city", contextType, userPrompt);
+		return retrieve("city", contextType, userPrompt);//vj12
 	}
 	
-	//vj12
-	public String retrieveByCategory(String category, String contextType, String userPrompt)//vj12
+	//vj14
+	public String retrieveFromVectorDBByCategory(String category, String contextType, String userPrompt)
 	{
 		return retrieve(category, contextType, userPrompt);
 	}
@@ -69,8 +81,7 @@ public class VectorDataStoreService
 	/* 
 	 * VectorDB operations to fetch records
 	 */
-	
-	public String retrieve(String category, String contextType, String userPrompt)//vj6
+	public String retrieve(String category, String contextType, String userPrompt)//vj12
 	{
 		System.out.println("\n--- started VectorDB operations");		
 		//vj3
@@ -78,7 +89,7 @@ public class VectorDataStoreService
 		
 		//vj3
 		//List<EmbeddingMatch<TextSegment>> result = fetchRecords(text);
-		List<EmbeddingMatch<TextSegment>> result = fetchRecords(category, userPrompt);//vj6
+		List<EmbeddingMatch<TextSegment>> result = fetchRecords(category, userPrompt);//vj12
 		
 		StringBuilder responseBldr = new StringBuilder(); StringBuilder tempResponseBldr = new StringBuilder();
 		
@@ -119,8 +130,11 @@ public class VectorDataStoreService
 		{
 		  vectorDbCollection = vectorDbIndexApiinfo; // "collection-apiinfo-1";
 		}
-		
-		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);	//vj6
+		else if("explainflow".equals(category)) //vj14
+		{
+		  vectorDbCollection = vectorDbIndexExamineflow; // "collection-examineflow-1";
+		}
+		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);	//vj12
 		
 		Embedding queryEmbedding = embdgModel.embed (query).content(); 
 		//vj3
@@ -129,8 +143,41 @@ public class VectorDataStoreService
 	        //return new ArrayList<EmbeddingMatch<TextSegment>>(); // "dummySemanticResult"
 	}
 	
+	/*  vj14
+	* loads context to VectorDB. Usually from preset file/on startup
+	*/	
+	public String loadData (String text, String category, boolean testMode)
+	{
+		System.out.println("\n---- started loading data to Vector DB ");
+		String result = "Failure : Vector DB load operation failed";
+		String vectorDbName = null;
+		
+		if("examineFlow".equals(category))
+		{
+			vectorDbName = vectorDbIndexExamineflow;
+		}
+		
+		try
+		{
+			if("Y".equals(vectorDbLoadExamineflow))
+			{
+				insertVectorData (modelSvc.getEmbeddingModel(), text, testMode, vectorDbName);
+				result = "Success: Vector DB load operation succeeded";
+			}
+		}
+		catch(Exception e )
+		{
+			System.out.println("**** error occurred loadData VectorDB");
+			e.printStackTrace();
+			return result;
+		}
+		
+		return result;
+	}
+	
+	
 	/*
-	* loads context to VectorDB
+	* loads context to VectorDB. Usually from preset file/on startup
 	*/	
 	public void load (String fileNameWithFullPath, boolean testMode)
 	{
@@ -159,6 +206,7 @@ public class VectorDataStoreService
 			flowTrainLines = storeFlowTrainData(fileNameWithFullPath, testMode, flowTrainLines);		
 			insertVectorData (modelSvc.getEmbeddingModel(), flowTrainLines, testMode, vectorDbIndexFlowtrain); //"collection-flowtrain-1"
 		}
+		
 		//vj11
 		if("Y".equals(vectorDbLoadApiinfo))
 		{
@@ -166,6 +214,7 @@ public class VectorDataStoreService
 			apiInfoLines = storeApiInfoData(fileNameWithFullPath, testMode, apiInfoLines);		
 			insertVectorData (modelSvc.getEmbeddingModel(), apiInfoLines, testMode, vectorDbIndexApiinfo);
 		}
+				
 		System.out.println("---- completed loading context to VectorDB");
 	}
 	
@@ -284,6 +333,7 @@ public class VectorDataStoreService
 		}
 		return lines;
 	}
+	
 	//vj11
 	private List<String> storeApiInfoData(String fileNameWithFullPath, boolean testMode, List<String> lines) {
 		if(testMode)
@@ -354,6 +404,42 @@ public class VectorDataStoreService
 			}
 		} //end for
 		
-		System.out.println("---- insertVectorData executed");
+		System.out.println("---- insertVectorData context executed");
 	}	
+	
+	/*	vj14
+	* inserts to VectorDB	
+	*/	
+	private void insertVectorData (EmbeddingModel embeddingModel, String text, boolean testMode, String vectorDbCollection) 
+	{
+			TextSegment segment1 = TextSegment.from(text, new Metadata()); 
+			Embedding embedding1 = embeddingModel.embed (segment1).content();
+			
+			if (testMode)			
+			{
+				System.out.println("---- VectorDB testMode "+testMode);			
+				EmbeddingStore<TextSegment> embdStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);//vj12
+				if (embdStore!=null) //if VectorDB is running on local
+				{
+					System.out.println("---- VectorDB connection is good ");			
+					embdStore.add(embedding1, segment1);			
+					System.out.println("---- loaded to VectorDB context : "+text);
+				}
+			}			
+			else			
+			{			
+				System.out.println("---- VectorDB testMode) " +testMode);
+				contextLoadSvc.getEmbeddingStore().add(embedding1, segment1); 
+				System.out.println("---- loaded to VectorDB - context : "+ text);
+			}
+			
+		System.out.println("---- insertVectorData data executed");
+	}
+
+	//vj14
+	public String retrieveFromFileByCategory(String category, String contextType, String fileName) throws IOException
+	{
+		Path path = Paths.get("C:\\git-workspace\\BawabaFlowPoints\\"+fileName);
+		return Files.readString(path);
+	}
 }
