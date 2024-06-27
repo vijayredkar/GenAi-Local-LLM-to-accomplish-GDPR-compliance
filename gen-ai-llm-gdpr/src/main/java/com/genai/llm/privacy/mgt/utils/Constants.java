@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class Constants {
 
-	private static String[] validModelsArr = {"llama2","llama3", "phi3:mini", "custom-model-1", "model-leap-1", "model-leap-controller-1", "model-leap-handler-1", "model-leap-repository-1", "llama3-70b-model-1"};//vj12
+	private static String[] validModelsArr = {"llama2","llama3", "phi3:mini", "custom-model-1", "model-leap-1", "model-leap-controller-1", "model-leap-handler-1", "model-leap-repository-1", "llama3-70b-model-1", "llama3:70b", "llama3-financial-categorize"};//vj14/13
 	private final List<String> validModelsList = new ArrayList<String>();	
 	private static Map<String, String> validLlmModels = new HashMap<String,String>();
 	
@@ -26,7 +26,7 @@ public class Constants {
 	
 	private static void createValidLlmModelsMap(String modelName) 
 	{
-		if("llama3".equals(modelName) || "custom-model-1".equals(modelName))
+		if("llama3:70b".equals(modelName) || "custom-model-1".equals(modelName) || "llama3-financial-categorize".equals(modelName))//vj14/13   PG-OCP has only big llama3 now. small llama3 was removed due to space constraint
 		{  
 			//vj7
 			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
