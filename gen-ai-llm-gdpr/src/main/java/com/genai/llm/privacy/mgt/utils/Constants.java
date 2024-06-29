@@ -6,86 +6,189 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Constants {
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-	private static String[] validModelsArr = {"llama2","llama3", "phi3:mini", "custom-model-1", "model-leap-1", "model-leap-controller-1", "model-leap-handler-1", "model-leap-repository-1", "llama3-70b-model-1", "llama3:70b", "llama3-financial-categorize"};//vj14/13
-	private final List<String> validModelsList = new ArrayList<String>();	
-	private static Map<String, String> validLlmModels = new HashMap<String,String>();
+@Component
+public class Constants {
 	
-	public static void addNewModelsToList()
-	 {
-		Arrays.asList(validModelsArr);
-	 }
+	@Value("${valid.llm.models.env.pgocp}")
+	private String validLlmModelsListEnvPgOcp;
 	
-	public static void addModelsToMap()
+	@Value("${external.access.llm.models.pgocp.1}")
+	private String externalAccessLlmModelsPgOcp1;
+	
+	@Value("${internal.access.llm.models.pgocp.2}")
+	private String internalAccessLlmModelsPgOcp2;
+	
+	@Value("${external.access.llm.models.pgocp.3}")
+	private String externalAccessLlmModelsPgOcp3;
+	
+	@Value("${internal.access.llm.models.pgocp.4}")
+	private String internalAccessLlmModelsPgOcp4;
+	
+	@Value("${external.access.llm.models.pgocp.5}")
+	private String externalAccessLlmModelsPgOcp5;
+	
+	@Value("${internal.access.llm.models.pgocp.6}")
+	private String internalAccessLlmModelsPgOcp6;
+
+
+	@Value("${valid.llm.models.env.pgvm}")
+	private String validLlmModelsListEnvPgVm;
+	
+	@Value("${external.access.llm.models.vm.1}")
+	private String externalAccessLlmModelsVm1;
+	
+	@Value("${internal.access.llm.models.vm.2}")
+	private String internalAccessLlmModelsVm2;
+			
+	//externalAccessLlmModelsPgOcp1
+	// external.access.llm.models.pgocp.3=https://ollama-big-bawabaai-gpt.pgocp.uat.emiratesnbd.com#llama3:70b
+	private static Map<String, String> modelEnvPgOcpMap = new HashMap<String,String>();
+	private static Map<String, String> modelEnvPgVmMap = new HashMap<String,String>();
+	
+	
+	public void createModelsToEnvMap()//vj15
 	 {
-		Arrays.asList(validModelsArr)
-		       //.forEach(m -> validLlmModels.put(m, m));
-				.forEach(m -> createValidLlmModelsMap(m));
+		prepareEnvConnInternal();
+		prepareEnvConnExternal();
+		
+		System.out.println("models env map: \n" );
+		System.out.println("PG-OCP: "+ modelEnvPgOcpMap.toString()+"\n");
+		System.out.println("PG-VM:  " +modelEnvPgVmMap.toString()+"\n");
 	 }	
 	
-	private static void createValidLlmModelsMap(String modelName) 
+	
+	private void prepareEnvConnInternal() //vj15
 	{
-		if("llama3:70b".equals(modelName) || "custom-model-1".equals(modelName) || "llama3-financial-categorize".equals(modelName))//vj14/13   PG-OCP has only big llama3 now. small llama3 was removed due to space constraint
-		{  
-			//vj7
-			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
-		}
-		else if("llama3-70b-model-1".equals(modelName))//vj12
-		{	
-			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama-llama3:11434");  //VM POD access
-			//validLlmModels.put(modelName, "http://lventibapp501u.uat.emiratesnbd.com:11434"); //Local mc access to VM
-		}			
-		else if("llama2".equals(modelName))
-		{	
-			//vj7
-			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
-		}
-		else if("phi3:mini".equals(modelName))
-		{			
-			//vj7
-			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
-		}
-		//vj9
-		else if("model-leap-1".equals(modelName))
-		{			
-			//vj7
-			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
-		}
-		else if("model-leap-controller-1".equals(modelName))
-		{			
-			//vj7
-			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
-		}
-		else if("model-leap-handler-1".equals(modelName))
-		{			
-			//vj7
-			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
-		}
-		else if("model-leap-repository-1".equals(modelName))
-		{			
-			//vj7
-			//validLlmModels.put(modelName, "http://127.0.0.1:11434");  //Locally running instance
-			validLlmModels.put(modelName, "http://ollama.bawabaai-gpt.svc.cluster.local:11434");  //PG POD access
-			//validLlmModels.put(modelName, "https://ollama-bawabaai-gpt.pgocp.uat.emiratesnbd.com"); //Local mc access to PG
-		}
+		if(System.getProperty("deployment_env").contains("internal"))
+		{
+			String[] elements = null;		
+			String[] models = null;
+						
+			elements = internalAccessLlmModelsPgOcp2.split("#");  
+			final String envResourceUrl2 = elements[0];                           
+			models = elements[1].split(",");                      
+			
+			Arrays.asList(models)
+					.forEach(m -> modelEnvPgOcpMap.put(m, envResourceUrl2)); 
+			
+			
+			
+			elements = internalAccessLlmModelsPgOcp4.split("#");  
+			final String envResourceUrl4 = elements[0];                           
+			models = elements[1].split(",");                      
+			
+			Arrays.asList(models)
+					.forEach(m -> modelEnvPgOcpMap.put(m, envResourceUrl4));
+			
+			
+			
+			elements = internalAccessLlmModelsPgOcp6.split("#");  
+			final String envResourceUrl6 = elements[0];                           
+			models = elements[1].split(",");                      
+			
+			Arrays.asList(models)
+					.forEach(m -> modelEnvPgOcpMap.put(m, envResourceUrl6)); 
+			
+			
+			elements = internalAccessLlmModelsVm2.split("#");  
+			final String envResourceUrl8 = elements[0];                           
+			models = elements[1].split(",");                      
+			
+			Arrays.asList(models)
+					.forEach(m -> modelEnvPgVmMap.put(m, envResourceUrl8));
+		}		
 	}
 
-	public static Map<String, String> getValidModelsMap()
+	private void prepareEnvConnExternal() //vj15
+	{	
+		if(System.getProperty("deployment_env").contains("external"))
+		{
+			String[] elements = null;		
+			String[] models = null;
+			
+			elements = externalAccessLlmModelsPgOcp1.split("#");  //https://ollama-big-bawabaai-gpt.pgocp.uat.emiratesnbd.com   llama3:70b,llama10
+			final String envResourceUrl1 = elements[0];           //https://ollama-big-bawabaai-gpt.pgocp.uat.emiratesnbd.com
+			models = elements[1].split(",");                      //llama3:70b   llama10
+			
+			Arrays.asList(models)
+					.forEach(m -> modelEnvPgOcpMap.put(m, envResourceUrl1));  // llama3:70b -> https://ollama-big-bawabaai-gpt.pgocp.uat.emiratesnbd.com
+						
+			
+			elements = externalAccessLlmModelsPgOcp3.split("#");  
+			final String envResourceUrl3 = elements[0];                           
+			models = elements[1].split(",");                      
+			
+			Arrays.asList(models)
+					.forEach(m -> modelEnvPgOcpMap.put(m, envResourceUrl3)); 
+			
+			
+			elements = externalAccessLlmModelsPgOcp5.split("#");  
+			final String envResourceUrl5 = elements[0];                           
+			models = elements[1].split(",");                      
+			
+			Arrays.asList(models)
+					.forEach(m -> modelEnvPgOcpMap.put(m, envResourceUrl5)); 
+			
+			
+			elements = externalAccessLlmModelsVm1.split("#");  
+			final String envResourceUrl7 = elements[0];                           
+			models = elements[1].split(",");                      
+			
+			Arrays.asList(models)
+					.forEach(m -> modelEnvPgVmMap.put(m, envResourceUrl7));
+		}	
+	}
+
+	//vj15
+	public boolean isModelValid(String modelName, String env)
 	 {
-		return validLlmModels;
+		boolean result = false;
+		
+		if(modelName == null)
+		{
+			return false;
+		}
+				
+		
+		if(env.contains("Bawaba-PG-OCP"))
+		{
+			result = validLlmModelsListEnvPgOcp.contains(modelName.trim());
+		}
+		else if (env.contains("Bawaba-PG-VM"))
+		{
+			result = validLlmModelsListEnvPgVm.contains(modelName.trim());	
+		}
+		
+		return result;
 	 }
+	
+	//vj15
+	public String getResourceByModelName(String modelName, String env) throws Exception
+	 {
+		System.out.println("---- getResourceByModelName modelName and env: "+modelName + " - "+ env);
+		String result = null;
+		
+		if(modelName == null)
+		{
+			throw new Exception("**** LLM Model name is not specified");
+		}
+				
+		
+		if(env.contains("Bawaba-PG-OCP"))
+		{
+			result = modelEnvPgOcpMap.get(modelName.trim());
+			System.out.println("---- getResourceByModelName got valid match");
+		}
+		if(env.contains("Bawaba-PG-VM"))
+		{
+			result = modelEnvPgVmMap.get(modelName.trim());	
+			System.out.println("---- getResourceByModelName got valid match");
+		}
+		
+		return result;
+	 }
+	
 }
