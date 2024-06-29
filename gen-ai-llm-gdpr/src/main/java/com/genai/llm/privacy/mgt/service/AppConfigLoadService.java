@@ -13,6 +13,9 @@ public class AppConfigLoadService
 	@Autowired //vj1
 	private VectorDataStoreService vectorDataSvc;
 	
+	
+	@Autowired
+	private Constants constants;
 	/*
 	* On application startup load default context to VectorDB
 	*/	
@@ -42,8 +45,8 @@ public class AppConfigLoadService
 		//String filePath = getClass().getClassLoader ().getResource (filetiame].getPile ();	
 		
 		
-		Constants.addModelsToMap();//vj7
-		System.out.println(" addModelsToMap done");	
+		constants.createModelsToEnvMap();//vj15
+		System.out.println(" createModelsToEnvMap done");	
 		
 		System.out.println(" completed initial context load on startup");
 		}
