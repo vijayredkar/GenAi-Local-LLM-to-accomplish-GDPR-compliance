@@ -11,6 +11,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.shaded.org.awaitility.Durations;
@@ -31,19 +32,24 @@ public class LargeLanguageModelService
 	@Autowired
 	private FileUtilsService fileUtilsSvc;	
 	
+	 //vj15
+	 @Autowired
+	 private Constants constants;
+	
 	StreamingChatLanguageModel modelStreaming = null;
 	/*
 	 * Local LLM server : Ollama operations	
 	 */
-	public String generate_in_batches(String text, boolean testMode, String llmModel, String category) throws Exception //vj14
+	public String generate_in_batches(String text, boolean testMode, String llmModel, String category) throws Exception //vj15
 	{
 		
 		Map<String, String> severConfigMap  = gatherConfig(testMode, llmModel); //vj7	
 		
 		String modelName       = severConfigMap.get("modelName");	//default model
 		
-		//vj7
-		if(llmModel !=null && Constants.getValidModelsMap().containsKey(llmModel.trim()))
+		//vj15
+		//if(llmModel !=null && Constants.getValidModelsMap().containsKey(llmModel.trim()))
+		if(constants.isModelValid(modelName, System.getProperty("deployment_env")))
 		{
 			modelName = llmModel; //user specified model
 		}
@@ -72,8 +78,8 @@ public class LargeLanguageModelService
         //String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded access from with PG POD only
 		//String llmServerUrl = "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"; //vijay hardcoded access from local machine
 		
-		//vj7	    
-		String llmServerUrl = Constants.getValidModelsMap().get(modelName);
+		//vj15	    
+		String llmServerUrl = constants.getResourceByModelName(modelName, System.getProperty("deployment_env"));
 		String llmResponse = "";
 		
 		
@@ -162,7 +168,7 @@ public class LargeLanguageModelService
 	    return llmResponse;
 	 }
 
-	public String generateWithRetry(String text, boolean testMode, String llmModel, String category, List<String> buffer)
+	public String generateWithRetry(String text, boolean testMode, String llmModel, String category, List<String> buffer) throws Exception
 	{
 		
 		//hardcoded for tests
@@ -189,8 +195,8 @@ public class LargeLanguageModelService
 		
 		String modelName       = severConfigMap.get("modelName");	//default model
 		
-		//vj7
-		if(llmModel !=null && Constants.getValidModelsMap().containsKey(llmModel.trim()))
+		//vj15
+		if(constants.isModelValid(modelName, System.getProperty("deployment_env")))
 		{
 			modelName = llmModel; //user specified model
 		}
@@ -219,8 +225,8 @@ public class LargeLanguageModelService
         //String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded access from with PG POD only
 		//String llmServerUrl = "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"; //vijay hardcoded access from local machine
 		
-		//vj7	    
-		String llmServerUrl = Constants.getValidModelsMap().get(modelName);
+		//vj15		
+		String llmServerUrl = constants.getResourceByModelName(llmModel, System.getProperty("deployment_env"));
 		String llmResponse = "";
 		
 		
@@ -282,7 +288,7 @@ public class LargeLanguageModelService
 	
 	
 	
-	public String generate(String text, boolean testMode, String llmModel, String category)
+	public String generate(String text, boolean testMode, String llmModel, String category) throws Exception  //vj15
 	{
 		/*
 		//hardcoded for tests
@@ -308,8 +314,8 @@ public class LargeLanguageModelService
 		
 		String modelName       = severConfigMap.get("modelName");	//default model
 		
-		//vj7
-		if(llmModel !=null && Constants.getValidModelsMap().containsKey(llmModel.trim()))
+		//vj15
+		if(constants.isModelValid(modelName, System.getProperty("deployment_env")))
 		{
 			modelName = llmModel; //user specified model
 		}
@@ -338,14 +344,14 @@ public class LargeLanguageModelService
         //String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded access from with PG POD only
 		//String llmServerUrl = "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"; //vijay hardcoded access from local machine
 		
-		//vj7	    
-		String llmServerUrl = Constants.getValidModelsMap().get(modelName);
+		//vj15
+		String llmServerUrl = constants.getResourceByModelName(modelName, System.getProperty("deployment_env"));
 		String llmResponse = "";
 		
 		
 		//vj8
 	     //System.out.println("\n---- Started local LLM invocation for user input : "+ text);
-	     //System.out.println("---- Generating with modelName : "+ modelName);
+	     System.out.println("---- Generating with modelName: "+ modelName + " on LLM server: "+ llmServerUrl);
 		
 	     /*
 	     //vj8  regular o/p
@@ -406,9 +412,9 @@ public class LargeLanguageModelService
 	
 	
 	//public String generate(String text, boolean testMode, String llmModel, String category) throws Exception //vj14  hardcoded
-	public String generate_1(String text, boolean testMode, String llmModel, String category)
+	public String generate_1(String text, boolean testMode, String llmModel, String category) throws Exception //vj15
 	{
-		
+		 
 		//hardcoded for tests
 		//String roleAndTask = "You are a helpful assistant. The following bytecode is generated by the Javaassist tool. Please explain the business execution logic in simple language. Do not mention assembly language words in your response. Mention the Java classes, methods and subsystems involved.\n";
 		String roleAndTask = "You are a helpful assistant. The following bytecode is generated by the Javaassist tool. "
@@ -433,8 +439,8 @@ public class LargeLanguageModelService
 		
 		String modelName       = severConfigMap.get("modelName");	//default model
 		
-		//vj7
-		if(llmModel !=null && Constants.getValidModelsMap().containsKey(llmModel.trim()))
+		//vj15
+		if(constants.isModelValid(modelName, System.getProperty("deployment_env")))
 		{
 			modelName = llmModel; //user specified model
 		}
@@ -463,8 +469,8 @@ public class LargeLanguageModelService
         //String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded access from with PG POD only
 		//String llmServerUrl = "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"; //vijay hardcoded access from local machine
 		
-		//vj7	    
-		String llmServerUrl = Constants.getValidModelsMap().get(modelName);
+		//vj15
+		String llmServerUrl = constants.getResourceByModelName(modelName, System.getProperty("deployment_env"));
 		String llmResponse = "";
 		
 		
