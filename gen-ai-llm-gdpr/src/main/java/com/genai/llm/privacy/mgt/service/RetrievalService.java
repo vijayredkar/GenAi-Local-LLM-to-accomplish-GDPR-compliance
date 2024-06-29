@@ -75,7 +75,7 @@ public class RetrievalService
 		return systemMessage;
 	}
 	
-	private String invokeLLMServer( List<String> llmPromptInBatches, String category, String llmModel, boolean testMode) 
+	private String invokeLLMServer( List<String> llmPromptInBatches, String category, String llmModel, boolean testMode) throws Exception //vj15
 	{
 		 System.out.println("\n\n---- Total batch count: "+llmPromptInBatches.size());
 		 StringBuilder responseBldr = new StringBuilder();
