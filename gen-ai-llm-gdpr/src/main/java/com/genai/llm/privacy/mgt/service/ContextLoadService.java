@@ -14,6 +14,22 @@ public class ContextLoadService
 {
 	@Autowired	
 	private FileUtilsService fileUtilsSvc;
+
+	//vj17
+	@Value("${vector.chromadb.url.local}")
+	String vectorDbUrlLocalMc;
+	
+	@Value("${vector.chromadb.url.pgocp.internal}")
+	String vectorDbUrlPgOcpInternal;
+	
+	@Value("${vector.chromadb.url.pgocp.external}")
+	String vectorDbUrlPgOcpExternal;
+	
+	@Value("${vector.chromadb.url.pgvm.internal}")
+	String vectorDbUrlPgVMInternal;
+	
+	@Value("${vector.chromadb.url.pgvm.external}")
+	String vectorDbUrlPgVMExternal;
 	
 	//private EmbeddingStore<TextSegment> embeddingStore = getEmbeddingStore(); //vj1	
 	private EmbeddingStore<TextSegment> embeddingStore = null; //vj1
@@ -64,28 +80,10 @@ public class ContextLoadService
 	//public EmbeddingStore<TextSegment> getEmbeddingStoreForTests(String category) //vj6
 	public EmbeddingStore<TextSegment> getEmbeddingStoreForTests(String vectorDbCollection)
 	{
-		//vj6
-		/*
-		if (embeddingStore == null)
-		{
-		*/
 			try  //try connecting to VectorDB from local machine launch
 			{
-				//--  Chroma
-				/*
-				// local machine
-				String vectorDbUrl        = "http://127.0.0.1:8000";
-				String vectorDbCollection = "collection-gdpr-1";	
-				*/
-				// PG env with Docker  //vj12
-				String vectorDbUrl        = "http://chroma.bawabaai-gpt.svc.cluster.local:8000";    //access within PG POD only
-				//String vectorDbUrl        = "https://chroma-bawabaai-gpt.pgocp.uat.emiratesnbd.com";  //access Chroma running on PG-OCP  from local machine	
-				String vectorDbUrlOnVM    = "http://lventibapp501u.uat.emiratesnbd.com:8000";     //access Chroma running on VM from local machine	
-								
-				if("Bawaba-PG-VM".equals(System.getProperty("deployment_env")))//vj12
-				{  //this 40GB model runs on the VM and not PG-OCP
-					vectorDbUrl = vectorDbUrlOnVM;
-				}
+				//vj17
+				String vectorDbUrl = handleVectorDBConnection();
 				System.out.println("---- started connect to VectorDB for Tests " + " vectorDbUrl " + vectorDbUrl + " vectorDbCollection: " + vectorDbCollection);
 				embeddingStore = ChromaEmbeddingStore.builder()
 													.baseUrl (vectorDbUrl)
@@ -115,5 +113,34 @@ public class ContextLoadService
 		/*}*/
 			System.out.println("---- completed connect to VectorDB for tests. Got embeddingStore " +embeddingStore);
 			return embeddingStore;
+	}
+
+	//vj17
+	private String handleVectorDBConnection()
+	{	
+		String vectorDbUrl = null;		
+		String env = System.getProperty("deployment_env");
+		
+		if(env.contains("Bawaba-PG-OCP_internal"))
+		{  
+			vectorDbUrl = vectorDbUrlPgOcpInternal;
+		}
+		else if(env.contains("Bawaba-PG-OCP_external"))
+		{  
+			vectorDbUrl = vectorDbUrlPgOcpExternal;
+		}
+		else if(env.contains("Bawaba-PG-VM_internal"))
+		{  
+			vectorDbUrl = vectorDbUrlPgVMInternal;
+		}
+		else if(env.contains("Bawaba-PG-VM_external"))
+		{  
+			vectorDbUrl = vectorDbUrlPgVMExternal;
+		}
+		else
+		{
+			System.out.println("**** error - invalid Vector DB env connection");					
+		}
+		return vectorDbUrl;
 	}
 }
