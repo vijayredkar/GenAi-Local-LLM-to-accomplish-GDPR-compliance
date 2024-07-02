@@ -8,6 +8,7 @@ import dev. langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 //import dev.langchain4j.store.embedding.elasticsearch.ElasticsearchEmbeddingStore;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class ContextLoadService
