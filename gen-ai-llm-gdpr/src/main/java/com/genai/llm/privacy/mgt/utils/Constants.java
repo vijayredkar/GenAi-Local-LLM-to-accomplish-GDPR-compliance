@@ -43,11 +43,31 @@ public class Constants {
 	@Value("${internal.access.llm.models.vm.2}")
 	private String internalAccessLlmModelsVm2;
 			
+	//vj18
+	@Value("${vector.db.index.examineflow}")
+	private String vectorDbIndexExamineflow;
+	
+	@Value("${vector.db.index.knowledgebase}")
+	private String vectorDbIndexKnowledgeBase;
+	
+	
+	//vj18
+	public String customSystemMessageKnwBase = 
+			" You are a helpful assistant. You will be provided documentation on standard procedures to be followed by an employee.\r\n" + 
+			" This vast documentation is tedious for the employee to comprehend. "
+			+ " Your task is to extract information specific to the question asked by the user. "
+			//+ " If the documentation is less than 95% relevant to the question asked then simple respond with \"NOT RELEVANT\" ."
+			+ " If the documentation is less than 95% relevant to the question asked then simple respond with a blank statement."
+			+ " If the documentation is more than 94% relevant then extract only the specific information that the user has asked for. "
+			+ " Provide your response in points format within 100 words only.\r\n" + 
+			" Here is the company documentation:\n";
+	
+	
 	//externalAccessLlmModelsPgOcp1
 	// external.access.llm.models.pgocp.3=https://ollama-big-bawabaai-gpt.pgocp.uat.emiratesnbd.com#llama3:70b
 	private static Map<String, String> modelEnvPgOcpMap = new HashMap<String,String>();
 	private static Map<String, String> modelEnvPgVmMap = new HashMap<String,String>();
-	
+	private static Map<String, String> categoryVectorDbMap = new HashMap<String,String>();//vj18
 	
 	public void createModelsToEnvMap()//vj15
 	 {
@@ -191,4 +211,16 @@ public class Constants {
 		return result;
 	 }
 	
+	//vj18
+	public void createCategoryVectorDbMap()
+	 {
+		categoryVectorDbMap.put("examineFlow", vectorDbIndexExamineflow);
+		categoryVectorDbMap.put("knowledgebase", vectorDbIndexKnowledgeBase);
+	 }
+	
+	//vj18
+	public Map<String, String> getCategoryVectorDbMap()
+	 {
+		return categoryVectorDbMap;
+	 }
 }
