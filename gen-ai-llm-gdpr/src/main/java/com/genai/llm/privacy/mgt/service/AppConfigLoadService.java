@@ -44,9 +44,11 @@ public class AppConfigLoadService
 		vectorDataSvc.load(resourcePath, true ); //vj1		
 		//String filePath = getClass().getClassLoader ().getResource (filetiame].getPile ();	
 		
+		constants.createCategoryVectorDbMap(); //vj18
+		System.out.println("---- createCategoryVectorDbMap done");	
 		
 		constants.createModelsToEnvMap();//vj15
-		System.out.println(" createModelsToEnvMap done");	
+		System.out.println("---- createModelsToEnvMap done");	
 		
 		System.out.println(" completed initial context load on startup");
 		}
