@@ -13,6 +13,9 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired; 
 import org.springframework.beans.factory.annotation.Value; 
 import org.springframework.stereotype.Service;
+
+import com.genai.llm.privacy.mgt.utils.Constants;
+
 import dev.langchain4j.data.document.Metadata; 
 import dev. langchain4j.data.embedding. Embedding; 
 import dev.langchain4j.data.segment.TextSegment; 
@@ -54,6 +57,20 @@ public class VectorDataStoreService
 	@Value("${vector.db.load.examineflow:Y}")//vj14
 	String vectorDbLoadExamineflow;
 	
+	@Value("${vector.db.index.knowledgebase:collection-knowledgebase-1}")	//vj18
+	String vectorDbIndexKnowledgebase;
+	
+	@Value("${vector.db.load.knowledgebase:Y}")//vj18
+	String vectorDbLoadKnowledgebase;
+		
+	@Value("${default.llm.model:llama3:70b}")//vj18
+	String defaultLlmModel;
+	 
+	@Value("${llm.system.message}")//vj18
+	String systemMessage;
+	
+	
+	
 	
 	
 	@Autowired	
@@ -65,7 +82,15 @@ public class VectorDataStoreService
 	@Autowired	
 	private FileUtilsService fileUtilsSvc;
 	
+	@Autowired  //vj18
+	Constants constants;
 	
+	@Autowired  //vj18
+	private LargeLanguageModelService largeLangModelSvc;
+	
+	@Autowired  //vj18
+	private RetrievalService retrievalSvc;
+		
 	//vj6
 	public String retrieve(String contextType, String userPrompt)
 	{
@@ -89,7 +114,7 @@ public class VectorDataStoreService
 		
 		//vj3
 		//List<EmbeddingMatch<TextSegment>> result = fetchRecords(text);
-		List<EmbeddingMatch<TextSegment>> result = fetchRecords(category, userPrompt);//vj12
+		List<EmbeddingMatch<TextSegment>> result = fetchRecords(category, userPrompt, null);//vj18
 		
 		StringBuilder responseBldr = new StringBuilder(); StringBuilder tempResponseBldr = new StringBuilder();
 		
@@ -111,7 +136,7 @@ public class VectorDataStoreService
 	/*
 	* fetches records from VectorDB based on semantic similarities	
 	*/	
-	public List<EmbeddingMatch<TextSegment>> fetchRecords(String category, String query)//vj12
+	public List<EmbeddingMatch<TextSegment>> fetchRecords(String category, String query, String suffix)//vj18
 	{	
 		EmbeddingModel embdgModel= modelSvc.getEmbeddingModel();	
 		//EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStore(); //vjl 
@@ -134,6 +159,12 @@ public class VectorDataStoreService
 		{
 		  vectorDbCollection = vectorDbIndexExamineflow; // "collection-examineflow-1";
 		}
+		else if("knowledgebase".equals(category)) //vj18
+		{
+		  suffix = suffix.replaceAll("\\s", "_");	
+		  vectorDbCollection = vectorDbIndexKnowledgebase+"-"+suffix; // collection-knowledgebase-2-Bawaba_Automation_13_:_AI_Scenario_&_Strategies
+		  //vectorDbCollection = vectorDbIndexKnowledgebase+"-"+"xyz";
+		}
 		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);	//vj12
 		
 		Embedding queryEmbedding = embdgModel.embed (query).content(); 
@@ -146,22 +177,35 @@ public class VectorDataStoreService
 	/*  vj14
 	* loads context to VectorDB. Usually from preset file/on startup
 	*/	
-	public String loadData (String text, String category, boolean testMode)
+	public String loadData (String text, String category, boolean testMode, String suffix)
 	{
 		System.out.println("\n---- started loading data to Vector DB ");
 		String result = "Failure : Vector DB load operation failed";
 		String vectorDbName = null;
 		
+		//vj18
+		/*
 		if("examineFlow".equals(category))
 		{
 			vectorDbName = vectorDbIndexExamineflow;
 		}
+		*/
+		vectorDbName = constants.getCategoryVectorDbMap().get(category);
 		
 		try
 		{
 			if("Y".equals(vectorDbLoadExamineflow))
 			{
 				insertVectorData (modelSvc.getEmbeddingModel(), text, testMode, vectorDbName);
+				result = "Success: Vector DB load operation succeeded";
+			}
+			if("Y".equals(vectorDbLoadKnowledgebase))//vj18
+			{
+				List<String> batches = retrievalSvc.splitIntoBatches(text, 1000);
+				suffix = suffix.replaceAll("\\s", "_");
+				final String vectorDbNameKnwBase = vectorDbName + "-"+suffix; // collection-knowledgebase-2-Bawaba_Automation_13_:_AI_Scenario_&_Strategies
+				//final String vectorDbNameKnwBase = vectorDbName + "-"+"xyz"; 
+				batches.forEach(b -> insertVectorData (modelSvc.getEmbeddingModel(), b, testMode, vectorDbNameKnwBase));
 				result = "Success: Vector DB load operation succeeded";
 			}
 		}
@@ -175,7 +219,18 @@ public class VectorDataStoreService
 		return result;
 	}
 	
-	
+	//vj18
+	/*
+	private String prepareVectorData(String text, boolean testMode, String category) 
+	{
+		String promptWithFullContext =  systemMessage
+										+ " Your will be provided raw HTML source code. "
+										+ " Your task is to extract only the text";
+		String response = largeLangModelSvc.generate(promptWithFullContext, testMode, defaultLlmModel, category);
+		return null;
+	}
+	*/
+
 	/*
 	* loads context to VectorDB. Usually from preset file/on startup
 	*/	
@@ -431,9 +486,19 @@ public class VectorDataStoreService
 				System.out.println("---- VectorDB testMode) " +testMode);
 				contextLoadSvc.getEmbeddingStore().add(embedding1, segment1); 
 				System.out.println("---- loaded to VectorDB - context : "+ text);
-			}
-			
+			}			
 		System.out.println("---- insertVectorData data executed");
+		
+		
+		/*
+		//--tests only vj18
+		EmbeddingModel embdgModel= modelSvc.getEmbeddingModel();	
+		Embedding queryEmbedding = embdgModel.embed (text).content(); 
+		//Embedding queryEmbedding = embdgModel.embed ("Bawaba Automation 13 : AI Scenario & Strategies").content(); 
+		List<EmbeddingMatch<TextSegment>> txtSg = contextLoadSvc.getEmbeddingStore().findRelevant(queryEmbedding, 1);
+		System.out.println("---- "+txtSg);
+		*/
+		//--
 	}
 
 	//vj14
