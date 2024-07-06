@@ -15,6 +15,10 @@ import org.springframework.web.bind. annotation. RestController;
 
 import com.genai.llm.privacy.mgt.service.RetrievalService;
 import com.genai.llm.privacy.mgt.service.VectorDataStoreService;
+import com.genai.llm.privacy.mgt.utils.Constants;//vj18
+
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.store.embedding.EmbeddingMatch;
 
 @RestController
 @RequestMapping(value="/gen-ai/v1/llm")
@@ -25,6 +29,10 @@ public class DataPrivacyController
 	
 	@Autowired //vj4
 	private VectorDataStoreService vectorDataSvc;
+	
+	@Autowired //vj18
+	private Constants constants;
+	
 
 	/*
 	endpoint to load newer contexts provided by the user
@@ -49,14 +57,109 @@ public class DataPrivacyController
 	@GetMapping("/retrieve")	
 	public ResponseEntity<String> retrieve(@RequestParam(value = "userPrompt", required = true) String userPrompt,
 										   @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
+										   @RequestParam(value = "category", required = false, defaultValue = "generic") String category,
 										   @RequestParam(value = "llmModel", required = false, defaultValue = "llama3:70b") String llmModel) 
-										   throws Exception  //vj14/13
+										   throws Exception  //vj18
 	{
 		boolean testMode= true; 
 		System.out.println("\n---- started retrieve flow - mode : "+testMode);
-		String response = retrievalSvc.orchestrate(userPrompt, customSystemMessage, "generic", llmModel, testMode);//vj14
+		String response = retrievalSvc.orchestrate(userPrompt, customSystemMessage, category, llmModel, testMode);//vj14
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
+	
+	
+	
+	
+	//vj18
+	/*
+	*  extract specific knowledge from vast documentation/Confluence 
+	*/
+	@PostMapping("/knowledgebase")	
+	public ResponseEntity<String> knowledgeExtract(@RequestBody String documentContent,
+												   @RequestParam(value = "documentTitle", required = false, defaultValue = "") String documentTitle,
+												   @RequestParam(value = "customUserQuestion", required = false, defaultValue = "") String customUserQuestion,
+												   @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
+												   @RequestParam(value = "documentRepoName", required = false, defaultValue = "") String documentRepoName,
+												   @RequestParam(value = "llmModel", required = false, defaultValue = "llama3:70b") String llmModel)
+											  throws Exception
+	{	
+		boolean testMode= true;
+		System.out.println("\n---- started explainflow - mode : "+testMode);
+		String response = null;		
+		
+		//stage-1: data prepare - load to VectorDB - confluence text i/p is vast. Split in to segments and save in to vectorDB per document title
+		if("".equals(documentRepoName.trim())) // implies doc has been saved to vector DB previously. Do not store again
+		{
+			vectorDataSvc.loadData(documentContent, "knowledgebase", true, documentTitle);
+		}
+		
+		//stage-2: narrow down to relevant text segments only - fetch from vectorDB per document title only those segments relevant to user's question
+		List<EmbeddingMatch<TextSegment>> matchingRecords = vectorDataSvc.fetchRecords("knowledgebase", customUserQuestion, documentTitle);
+		
+		//stage 3:  1st level of LLM refinement - retain only those segments that are > 95% relevant
+		String userQuestionForKnwBase = " Here is the user's question:\n" + customUserQuestion +"\n";
+		StringBuilder responseBldr = new StringBuilder();
+		matchingRecords.forEach(m -> { 
+									
+									
+									System.out.println("---- m \n\n"+m.embedded().text());
+									String enhancedPrompt = constants.customSystemMessageKnwBase +" \n "+ m.embedded().text() +" \n "+userQuestionForKnwBase;		
+									try {
+											String response1 = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic");
+											responseBldr.append(response1).append("\n");
+											System.out.println("---- response1: \n "+response1);
+									} catch (Exception e) 
+									{
+										e.printStackTrace();
+									}     
+		} );
+		
+		response =  responseBldr.toString();
+		
+		//stage 4: 2nd level of LLM refinement - run user's question on the consolidated LLM 1st level response 
+		String consolidatedEnhancedPrompt = constants.customSystemMessageKnwBase +" \n "+ response +" \n "+userQuestionForKnwBase;
+		try 
+		{
+			String response2 = retrievalSvc.orchestrateLLMServerOnly(consolidatedEnhancedPrompt, testMode, llmModel, "generic");
+			responseBldr.append(response2).append("\n");
+			System.out.println("---- final response2: \n "+response2);
+		} 
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+		}   
+		
+		
+		
+		
+		
+		/*
+		//stage-1 response: very detailed based off the confluence vast text
+		response = retrievalSvc.orchestrate(documentContent, constants.customSystemMessageKnwBase+"Z@@"+customUserQuestion+"Z@@"+documentTitle,  "knowledgebase", llmModel, testMode);
+		
+		//stage-2 response: summarized to make it readable for generic audience
+		System.out.println("\n\n ---- Final summmary of the execution flow ----"); 
+		
+		String userQuestionForKnwBase = " Here is the user's question:\n" + customUserQuestion +"\n";		
+		String enhancedPrompt = constants.customSystemMessageKnwBase +" \n "+response+" \n "+userQuestionForKnwBase; //ensure this size is less than 2000 words
+		response = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic");
+		*/
+		
+		
+		
+		
+		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 	/* vj14
 	 * Devathon prototype - external txfrs/IBAN/NRE flow explanations 
@@ -107,7 +210,7 @@ public class DataPrivacyController
 		boolean testMode= true; 
 		System.out.println("\n---- started invokeVectorDBOnlyWithPayload - mode : "+testMode);
 		
-		String response = vectorDataSvc.loadData(text, category, true);
+		String response = vectorDataSvc.loadData(text, category, true, null);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
