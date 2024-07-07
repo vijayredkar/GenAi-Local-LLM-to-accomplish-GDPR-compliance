@@ -643,6 +643,7 @@ public class LargeLanguageModelService
 	  * standalone LLM server instance.
 	  * be sure to have Ollama server running 
 	  */
+	 /*   vj20
 	 private ChatLanguageModel buildLLMResponseModelStandAloneServer(String llmServerUrl, String modelName, double llmResponseTemp) 
 	 {
 			ChatLanguageModel model = OllamaChatModel.builder()
@@ -655,7 +656,7 @@ public class LargeLanguageModelService
 								        			   .build();
 			return model;
 	}
-	 
+	*/ 
 	 
 	 /*
 	  * standalone LLM server instance.
