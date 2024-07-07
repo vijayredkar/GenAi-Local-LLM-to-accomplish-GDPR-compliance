@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,25 +16,25 @@ import org.springframework.web.bind. annotation. RestController;
 
 import com.genai.llm.privacy.mgt.service.RetrievalService;
 import com.genai.llm.privacy.mgt.service.VectorDataStoreService;
-import com.genai.llm.privacy.mgt.utils.Constants;//vj18
+import com.genai.llm.privacy.mgt.utils.Constants;
 
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 
+//vj19
 @RestController
 @RequestMapping(value="/gen-ai/v1/llm")
-public class DataPrivacyController 
+public class DataPrivacyController
 {
 	@Autowired
 	private RetrievalService retrievalSvc;
 	
-	@Autowired //vj4
+	@Autowired 
 	private VectorDataStoreService vectorDataSvc;
 	
-	@Autowired //vj18
+	@Autowired 
 	private Constants constants;
 	
-
 	/*
 	endpoint to load newer contexts provided by the user
 	*/
@@ -58,34 +59,39 @@ public class DataPrivacyController
 	public ResponseEntity<String> retrieve(@RequestParam(value = "userPrompt", required = true) String userPrompt,
 										   @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
 										   @RequestParam(value = "category", required = false, defaultValue = "generic") String category,
-										   @RequestParam(value = "llmModel", required = false, defaultValue = "llama3:70b") String llmModel) 
-										   throws Exception  //vj18
+										   @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+										   @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
+										   @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
+										   @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
+										   @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput)
+										   throws Exception  
 	{
 		boolean testMode= true; 
 		System.out.println("\n---- started retrieve flow - mode : "+testMode);
-		String response = retrievalSvc.orchestrate(userPrompt, customSystemMessage, category, llmModel, testMode);//vj14
+		String response = retrievalSvc.orchestrate(userPrompt, customSystemMessage, category, llmModel, testMode,temperature, embeddingsMinScore, retrievalLimitMax);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
-	
-	
-	
-	//vj18
 	/*
 	*  extract specific knowledge from vast documentation/Confluence 
 	*/
 	@PostMapping("/knowledgebase")	
 	public ResponseEntity<String> knowledgeExtract(@RequestBody String documentContent,
 												   @RequestParam(value = "documentTitle", required = false, defaultValue = "") String documentTitle,
-												   @RequestParam(value = "customUserQuestion", required = false, defaultValue = "") String customUserQuestion,
+												   @RequestParam(value = "customUserQuestion", required = true, defaultValue = "") String customUserQuestion,
 												   @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
-												   @RequestParam(value = "documentRepoName", required = false, defaultValue = "") String documentRepoName,
-												   @RequestParam(value = "llmModel", required = false, defaultValue = "llama3:70b") String llmModel)
+												   @RequestParam(value = "documentRepoName", required = false, defaultValue = "") String documentRepoName,												   
+												   @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.6") String embeddingsMinScore,
+												   @RequestParam(value = "temperature", required = false, defaultValue = "0") String temperature,
+												   @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "4") String retrievalLimitMax,
+												   @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput,
+												   @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel)
 											  throws Exception
 	{	
-		boolean testMode= true;
-		System.out.println("\n---- started explainflow - mode : "+testMode);
+		boolean testMode= true;		
+		System.out.println("\n---- started knowledgeExtract - mode : "+testMode);		
 		String response = null;		
+				
 		
 		//stage-1: data prepare - load to VectorDB - confluence text i/p is vast. Split in to segments and save in to vectorDB per document title
 		if("".equals(documentRepoName.trim())) // implies doc has been saved to vector DB previously. Do not store again
@@ -94,33 +100,35 @@ public class DataPrivacyController
 		}
 		
 		//stage-2: narrow down to relevant text segments only - fetch from vectorDB per document title only those segments relevant to user's question
-		List<EmbeddingMatch<TextSegment>> matchingRecords = vectorDataSvc.fetchRecords("knowledgebase", customUserQuestion, documentTitle);
+		List<EmbeddingMatch<TextSegment>> matchingRecords = vectorDataSvc.fetchRecords("knowledgebase", customUserQuestion, documentTitle, embeddingsMinScore, retrievalLimitMax);
 		
 		//stage 3:  1st level of LLM refinement - retain only those segments that are > 95% relevant
 		String userQuestionForKnwBase = " Here is the user's question:\n" + customUserQuestion +"\n";
+		String systemMsgKnwBase = "".equals(customSystemMessage) ? constants.customSystemMessageKnwBase : customSystemMessage;		
 		StringBuilder responseBldr = new StringBuilder();
-		matchingRecords.forEach(m -> { 
-									
-									
-									System.out.println("---- m \n\n"+m.embedded().text());
-									String enhancedPrompt = constants.customSystemMessageKnwBase +" \n "+ m.embedded().text() +" \n "+userQuestionForKnwBase;		
-									try {
-											String response1 = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic");
-											responseBldr.append(response1).append("\n");
-											System.out.println("---- response1: \n "+response1);
-									} catch (Exception e) 
-									{
-										e.printStackTrace();
-									}     
-		} );
+		
+		matchingRecords.forEach(m -> {									
+										System.out.println("---- semantically matching record from VectorDB: \n\n"+m.embedded().text());										
+										String enhancedPrompt = systemMsgKnwBase +" \n "+ m.embedded().text() +" \n "+userQuestionForKnwBase;										
+										
+										try 
+										{
+												String response1 = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic", temperature);
+												responseBldr.append(response1).append("\n");
+												System.out.println("---- response1: \n "+response1);
+										} catch (Exception e) 
+										{
+											e.printStackTrace();
+										}     
+									} );
 		
 		response =  responseBldr.toString();
 		
 		//stage 4: 2nd level of LLM refinement - run user's question on the consolidated LLM 1st level response 
-		String consolidatedEnhancedPrompt = constants.customSystemMessageKnwBase +" \n "+ response +" \n "+userQuestionForKnwBase;
+		String consolidatedEnhancedPrompt = systemMsgKnwBase +" \n "+ response +" \n "+userQuestionForKnwBase;
 		try 
 		{
-			String response2 = retrievalSvc.orchestrateLLMServerOnly(consolidatedEnhancedPrompt, testMode, llmModel, "generic");
+			String response2 = retrievalSvc.orchestrateLLMServerOnly(consolidatedEnhancedPrompt, testMode, llmModel, "generic", temperature);
 			responseBldr.append(response2).append("\n");
 			System.out.println("---- final response2: \n "+response2);
 		} 
@@ -128,10 +136,6 @@ public class DataPrivacyController
 		{
 			e.printStackTrace();
 		}   
-		
-		
-		
-		
 		
 		/*
 		//stage-1 response: very detailed based off the confluence vast text
@@ -145,44 +149,42 @@ public class DataPrivacyController
 		response = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic");
 		*/
 		
-		
-		
-		
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-	/* vj14
+	/* 
 	 * Devathon prototype - external txfrs/IBAN/NRE flow explanations 
 	 */
 	@GetMapping("/retrieve-flowtrain")	
-	public ResponseEntity<String> retrieveFlowTrain (@RequestParam("text") String text, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3:70b") String llmModel) throws Exception  //vj14/13
+	public ResponseEntity<String> retrieveFlowTrain (@RequestParam("text") String text, 
+													 @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+												     @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
+												     @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
+												     @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
+												     @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput)
+													 throws Exception  
 	{	
 		boolean testMode= true;
 		System.out.println("\n---- started retrieveFlowTrain flow - mode : "+testMode);
-		String response = retrievalSvc.orchestrateFlowTrain(text, testMode, llmModel, "flowtrain");
+		String response = retrievalSvc.orchestrateFlowTrain(text, testMode, llmModel, "flowtrain", embeddingsMinScore, retrievalLimitMax, temperature);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
-	
-	//vj11
+		
 	/*
 	* retrieve SAHAB spec info
 	*/
 	@GetMapping("/retrieve-apiinfo")	
-	public ResponseEntity<String> retrieveApiInfo (@RequestParam("text") String text, @RequestParam(value = "llmModel", required = false, defaultValue = "llama3:70b") String llmModel) throws Exception  //vj14/13
+	public ResponseEntity<String> retrieveApiInfo (@RequestParam("text") String text, 
+													@RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+													@RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
+												    @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
+												    @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
+												    @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput)
+													throws Exception  
 	{	
 		boolean testMode= true;
 		System.out.println("\n---- started retrieveApiInfo flow - mode : "+testMode);
-		String response = retrievalSvc.orchestrateApiInfo(text, testMode, llmModel, "apiinfo");
+		String response = retrievalSvc.orchestrateApiInfo(text, testMode, llmModel, "apiinfo", embeddingsMinScore, retrievalLimitMax, temperature);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
@@ -190,16 +192,19 @@ public class DataPrivacyController
 	 * endpoint to fetch response directly from the VectorDB only
 	 */
 	@GetMapping("/testVectorDBInvocationOnly")
-	public ResponseEntity<String> invokeVectorDBOnly(@RequestParam("text") String text) 
+	public ResponseEntity<String> invokeVectorDBOnly(@RequestParam("text") String text,
+													 @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
+												     @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
+												     @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
+												     @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput)
 	{
 		boolean testMode= true; 
 		System.out.println("\n---- started invokeVectorDBOnly - mode : "+testMode);
-		String response = retrievalSvc.orchestrateVectorDBOnly(text, testMode);
-		//String response = ""; //vj1
+		String response = retrievalSvc.orchestrateVectorDBOnly(text, testMode, embeddingsMinScore, retrievalLimitMax);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
-	/* vj14
+	/* 
 	 * endpoint to load data directly in to the VectorDB only
 	 */
 	@PostMapping("/dataToVectorStore")
@@ -214,15 +219,19 @@ public class DataPrivacyController
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
-	//vj14
+	
 	/*
 	*  explain business logic executed in an application flow - fetch debit cards status, limits fetch, create debit card
 	*/
 	@GetMapping("/explainflow")	
 	public ResponseEntity<String> explainflow(@RequestParam(value = "userPrompt", required = true) String userPrompt,
 											  @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
-											  @RequestParam(value = "llmModel", required = false, defaultValue = "llama3:70b") String llmModel) 
-											  throws Exception  //vj14/13
+											  @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+											  @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
+										      @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
+										      @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
+										      @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput)										      
+											  throws Exception  
 									
 	{	
 		boolean testMode= true;
@@ -230,17 +239,17 @@ public class DataPrivacyController
 		String response = null;		
 		
 		//stage-1 response: very detailed based off the interpreted bytecode instructions from the file  
-		response = retrievalSvc.orchestrate(userPrompt, customSystemMessage,  "explainflow", llmModel, testMode);
+		response = retrievalSvc.orchestrate(userPrompt, customSystemMessage,  "explainflow", llmModel, testMode, temperature, embeddingsMinScore, retrievalLimitMax);
 		
 		//stage-2 response: summarized to make it readable for generic audience
-		System.out.println("\n\n ---- Final summmary of the execution flow ----"); //vj14
+		System.out.println("\n\n ---- Final summmary of the execution flow ----"); 
 		String instruction = "You are a helpful assistant. Please summarize the below execution flow in simple language. "
 							  + "Specify the Java classes, methods and subsystems involved. "
 							  + "Display your response in 3 sections under the headers Execution Flow, Exception Handling and Return Result"
 							  //+ "Restrict your response to 5 lines only. "
 							  ;		
 		String enhancedPrompt = instruction+" \n "+response;
-		response = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic");//vj14 summarize the o/p further
+		response = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic", temperature); //summarize the o/p further
 		
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
@@ -248,12 +257,17 @@ public class DataPrivacyController
 	/*
 	 * endpoint to fetch response directly from the VectorDB only - city, employer names semantic match
 	 */
-	@GetMapping("/closest-semantic-match")   //city employer
-	public ResponseEntity<String> match(@RequestParam(required=false, defaultValue="city") String category, @RequestParam("text") String text) 
+	@GetMapping("/closest-semantic-match")
+	public ResponseEntity<String> match(@RequestParam("text") String text,
+										@RequestParam(required=false, defaultValue="city") String category,										
+										@RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
+									    @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
+									    @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
+									    @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput)
 	{
 		boolean testMode= true; 
 		System.out.println("\n---- started match - mode : "+testMode);
-		String response = retrievalSvc.orchestrateVectorDBOnly(category, text, testMode);
+		String response = retrievalSvc.orchestrateVectorDBOnly(category, text, testMode, embeddingsMinScore, retrievalLimitMax);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
@@ -263,30 +277,38 @@ public class DataPrivacyController
 	@GetMapping("/testLLMServerInvocationOnly")
 	public ResponseEntity<String> invokeLLMServerOnlyWithSmallPayload(@RequestParam(value = "userPrompt", required = true) String userPrompt, 
 																	  @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
-																	  @RequestParam(value = "llmModel", required = false, defaultValue = "llama3:70b") String llmModel)
-																	  throws Exception  //vj14/13
+																	  @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+																	  @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
+																	  @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
+																	  @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
+																	  @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput)
+																	  throws Exception  
 	{
 		boolean testMode= true; 
 		System.out.println("\n---- started invokeLLMServerOnlyWithSmallPayload - mode : "+testMode);		
-		String response = retrievalSvc.orchestrate(userPrompt, customSystemMessage, "generic", llmModel, testMode);//vj14
+		String response = retrievalSvc.orchestrate(userPrompt, customSystemMessage, "generic", llmModel, testMode, temperature, embeddingsMinScore, retrievalLimitMax);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
-	/* vj14
+	/* 
 	 * endpoint to fetch response from the local LLM inference engine only
 	 * big payloads generic prompts - huge YML to JSON/ generate Cucumber test cases/ dataMapper
 	 */
 	@PostMapping("/testLLMServerInvocationOnly")
 	public ResponseEntity<String> invokeLLMServerOnlyWithBigPayload(@RequestBody String userPrompt,
 																	@RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
-																	@RequestParam(value = "llmModel", required = false, defaultValue = "llama3:70b") String llmModel) 
-																	throws Exception  //vj14/13
+																	@RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel, 
+																	@RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
+																    @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
+																    @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
+																    @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput)
+																	throws Exception  
 	{
 		validate(userPrompt);
 		
 		boolean testMode= true;
 		System.out.println("\n---- started invokeLLMServerOnlyWithBigPayload - mode : "+testMode + " llmModel : "+llmModel);
-		String response = retrievalSvc.orchestrate(userPrompt, customSystemMessage, "generic", llmModel, testMode);//vj14
+		String response = retrievalSvc.orchestrate(userPrompt, customSystemMessage, "generic", llmModel, testMode, temperature, embeddingsMinScore, retrievalLimitMax);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
