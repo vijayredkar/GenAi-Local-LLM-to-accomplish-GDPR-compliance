@@ -32,7 +32,7 @@ public class LargeLanguageModelService
 	@Autowired
 	private FileUtilsService fileUtilsSvc;	
 	
-	 //vj15
+	 
 	 @Autowired
 	 private Constants constants;
 	
@@ -40,14 +40,14 @@ public class LargeLanguageModelService
 	/*
 	 * Local LLM server : Ollama operations	
 	 */
-	public String generate_in_batches(String text, boolean testMode, String llmModel, String category) throws Exception //vj15
+	public String generate_in_batches(String text, boolean testMode, String llmModel, String category, String temperature) throws Exception //vj19
 	{
 		
-		Map<String, String> severConfigMap  = gatherConfig(testMode, llmModel); //vj7	
+		Map<String, String> severConfigMap  = gatherConfig(testMode, llmModel); 	
 		
 		String modelName       = severConfigMap.get("modelName");	//default model
 		
-		//vj15
+		
 		//if(llmModel !=null && Constants.getValidModelsMap().containsKey(llmModel.trim()))
 		if(constants.isModelValid(modelName, System.getProperty("deployment_env")))
 		{
@@ -63,7 +63,7 @@ public class LargeLanguageModelService
 		Integer llmServerPort  = Integer.parseInt(severConfigMap.get("llmServerPort"));
 		Double llmResponseTemp = Double.parseDouble(severConfigMap.get("llmResponseTemp"));
 				
-	    //vj4
+	    
 	    /*
              -- on the fly launch. Does not work in PG env
 	    GenericContainer<?> ollama = startLLMServer(modelName, llmServerPort); 	    
@@ -71,36 +71,35 @@ public class LargeLanguageModelService
 	    stopLLMServer(ollama); // stop LLM server on the fly.
 	    */	
 		
-	    //vj7
+	    
 	    //--standalone server invocation
 	    //String llmServerUrl = "http://127.0.0.1:11434"; //vijay hardcoded local machine
 	    //String llmServerUrl = "http://ollama.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded
         //String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded access from with PG POD only
 		//String llmServerUrl = "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"; //vijay hardcoded access from local machine
 		
-		//vj15	    
+			    
 		String llmServerUrl = constants.getResourceByModelName(modelName, System.getProperty("deployment_env"));
 		String llmResponse = "";
 		
 		
-		//vj8
+		
 	     System.out.println("\n---- Started local LLM invocation for user input : "+ text);
 	     //System.out.println("---- Generating with modelName : "+ modelName + "\n llmServerUrl : "+ llmServerUrl);
 		
-	     //vj8  regular o/p
+	     //  regular o/p
 	    //ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);		    
 	    //llmResponse = model.generate(text);	  
-	     
-	     
-	     
+	     	     
 	     if(modelStreaming == null)
 	     {
+	      llmResponseTemp =  "".equals(temperature) ? llmResponseTemp : Double.parseDouble(temperature);
 	      modelStreaming = buildLLMResponseModelStandAloneServerStreaming(llmServerUrl, modelName, llmResponseTemp);
 	     }
 	     
 	     CompletableFuture<Response<AiMessage>> futureResponse = new CompletableFuture<>();
 	     
-	     //vj14
+	     
 	     List<String> llmPromptInBatches = manageLlmPromptVolume(text, category);
 	     
 	     /*
@@ -123,7 +122,7 @@ public class LargeLanguageModelService
 		    	 //processingInProgress.add(true);     //curr batch processing has started. Next batch cannot start
 		    	 processingInProgress[0]=true;		   //curr batch processing has started. Next batch cannot start
 		    	 
-		    	//vj8 streaming o/p  start for 1 batch
+		    	 //streaming o/p  start for 1 batch
 		    	 String batch = batchItr.next();
 		    	 modelStreaming.generate(batch, new StreamingResponseHandler<AiMessage>() 
 		    	 {
@@ -168,7 +167,7 @@ public class LargeLanguageModelService
 	    return llmResponse;
 	 }
 
-	public String generateWithRetry(String text, boolean testMode, String llmModel, String category, List<String> buffer) throws Exception
+	public String generateWithRetry(String text, boolean testMode, String llmModel, String category, List<String> buffer, String temperature) throws Exception //vj19
 	{
 		
 		//hardcoded for tests
@@ -195,7 +194,7 @@ public class LargeLanguageModelService
 		
 		String modelName       = severConfigMap.get("modelName");	//default model
 		
-		//vj15
+		
 		if(constants.isModelValid(modelName, System.getProperty("deployment_env")))
 		{
 			modelName = llmModel; //user specified model
@@ -210,7 +209,7 @@ public class LargeLanguageModelService
 		Integer llmServerPort  = Integer.parseInt(severConfigMap.get("llmServerPort"));
 		Double llmResponseTemp = Double.parseDouble(severConfigMap.get("llmResponseTemp"));
 				
-	    //vj4
+	    
 	    /*
              -- on the fly launch. Does not work in PG env
 	    GenericContainer<?> ollama = startLLMServer(modelName, llmServerPort); 	    
@@ -218,24 +217,24 @@ public class LargeLanguageModelService
 	    stopLLMServer(ollama); // stop LLM server on the fly.
 	    */	
 		
-	    //vj7
+	    
 	    //--standalone server invocation
 	    //String llmServerUrl = "http://127.0.0.1:11434"; //vijay hardcoded local machine
 	    //String llmServerUrl = "http://ollama.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded
         //String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded access from with PG POD only
 		//String llmServerUrl = "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"; //vijay hardcoded access from local machine
 		
-		//vj15		
+				
 		String llmServerUrl = constants.getResourceByModelName(llmModel, System.getProperty("deployment_env"));
 		String llmResponse = "";
 		
 		
-		//vj8
+		
 	     System.out.println("\n---- Started local LLM invocation for user input : "+ text);
 	     System.out.println("---- Generating with modelName : "+ modelName);
 		
 	    /*
-	    //vj8  regular o/p
+	      regular o/p
 	    ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);
 	    llmResponse = model.generate(newText);	  
 	    System.out.println("\n\n---- buffer populated"); 
@@ -245,7 +244,8 @@ public class LargeLanguageModelService
 	    
 	    
 	     
-	     //vj8 streaming o/p  start
+	     //vj19 streaming o/p  start
+	     llmResponseTemp =  "".equals(temperature) ? llmResponseTemp : Double.parseDouble(temperature);
 	     StreamingChatLanguageModel modelStreaming = buildLLMResponseModelStandAloneServerStreaming(llmServerUrl, modelName, llmResponseTemp);	     
 	     CompletableFuture<Response<AiMessage>> futureResponse = new CompletableFuture<>();
 	     try 
@@ -284,11 +284,8 @@ public class LargeLanguageModelService
 	    return llmResponse;
 	    
 	 }
-
 	
-	
-	
-	public String generate(String text, boolean testMode, String llmModel, String category) throws Exception  //vj15
+	public String generate(String text, boolean testMode, String llmModel, String category, String temperature) throws Exception  //vj19
 	{
 		/*
 		//hardcoded for tests
@@ -314,7 +311,7 @@ public class LargeLanguageModelService
 		
 		String modelName       = severConfigMap.get("modelName");	//default model
 		
-		//vj15
+		
 		if(constants.isModelValid(modelName, System.getProperty("deployment_env")))
 		{
 			modelName = llmModel; //user specified model
@@ -329,7 +326,7 @@ public class LargeLanguageModelService
 		Integer llmServerPort  = Integer.parseInt(severConfigMap.get("llmServerPort"));
 		Double llmResponseTemp = Double.parseDouble(severConfigMap.get("llmResponseTemp"));
 				
-	    //vj4
+	    
 	    /*
              -- on the fly launch. Does not work in PG env
 	    GenericContainer<?> ollama = startLLMServer(modelName, llmServerPort); 	    
@@ -337,24 +334,24 @@ public class LargeLanguageModelService
 	    stopLLMServer(ollama); // stop LLM server on the fly.
 	    */	
 		
-	    //vj7
+	    
 	    //--standalone server invocation
 	    //String llmServerUrl = "http://127.0.0.1:11434"; //vijay hardcoded local machine
 	    //String llmServerUrl = "http://ollama.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded
         //String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded access from with PG POD only
 		//String llmServerUrl = "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"; //vijay hardcoded access from local machine
 		
-		//vj15
+		
 		String llmServerUrl = constants.getResourceByModelName(modelName, System.getProperty("deployment_env"));
 		String llmResponse = "";
 		
 		
-		//vj8
+		
 	     //System.out.println("\n---- Started local LLM invocation for user input : "+ text);
 	     System.out.println("---- Generating with modelName: "+ modelName + " on LLM server: "+ llmServerUrl);
 		
 	     /*
-	     //vj8  regular o/p
+	       regular o/p
 	    ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);	
 	    try
 	    {
@@ -369,7 +366,7 @@ public class LargeLanguageModelService
 	    } 
 	     */
 	     
-	     //vj8 streaming o/p  start
+	     //vj19
 	     StreamingChatLanguageModel modelStreaming = buildLLMResponseModelStandAloneServerStreaming(llmServerUrl, modelName, llmResponseTemp);	     
 	     CompletableFuture<Response<AiMessage>> futureResponse = new CompletableFuture<>();
 	     try 
@@ -407,12 +404,7 @@ public class LargeLanguageModelService
 	    return llmResponse;
 	 }
 
-	
-	
-	
-	
-	//public String generate(String text, boolean testMode, String llmModel, String category) throws Exception //vj14  hardcoded
-	public String generate_1(String text, boolean testMode, String llmModel, String category) throws Exception //vj15
+	public String generate_1(String text, boolean testMode, String llmModel, String category) throws Exception 
 	{
 		 
 		//hardcoded for tests
@@ -439,7 +431,7 @@ public class LargeLanguageModelService
 		
 		String modelName       = severConfigMap.get("modelName");	//default model
 		
-		//vj15
+		
 		if(constants.isModelValid(modelName, System.getProperty("deployment_env")))
 		{
 			modelName = llmModel; //user specified model
@@ -454,7 +446,7 @@ public class LargeLanguageModelService
 		Integer llmServerPort  = Integer.parseInt(severConfigMap.get("llmServerPort"));
 		Double llmResponseTemp = Double.parseDouble(severConfigMap.get("llmResponseTemp"));
 				
-	    //vj4
+	    
 	    /*
              -- on the fly launch. Does not work in PG env
 	    GenericContainer<?> ollama = startLLMServer(modelName, llmServerPort); 	    
@@ -462,24 +454,24 @@ public class LargeLanguageModelService
 	    stopLLMServer(ollama); // stop LLM server on the fly.
 	    */	
 		
-	    //vj7
+	    
 	    //--standalone server invocation
 	    //String llmServerUrl = "http://127.0.0.1:11434"; //vijay hardcoded local machine
 	    //String llmServerUrl = "http://ollama.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded
         //String llmServerUrl = "http://ollama-llama3.bawabaai-gpt.svc.cluster.local:11434"; //vijay hardcoded access from with PG POD only
 		//String llmServerUrl = "https://ollama-llama3-bawabaai-gpt.pgocp.uat.emiratesnbd.com"; //vijay hardcoded access from local machine
 		
-		//vj15
+		
 		String llmServerUrl = constants.getResourceByModelName(modelName, System.getProperty("deployment_env"));
 		String llmResponse = "";
 		
 		
-		//vj8
+		
 	     System.out.println("\n---- Started local LLM invocation for user input : "+ text);
 	     //System.out.println("---- Generating with modelName : "+ modelName);
 		
 	     /*
-	     //vj8  regular o/p
+	       regular o/p
 	    ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);	
 	    try
 	    {
@@ -494,12 +486,12 @@ public class LargeLanguageModelService
 	    } 
 	     */
 	     
-	     //vj8 streaming o/p  start
+	     // streaming o/p  start
 	     StreamingChatLanguageModel modelStreaming = buildLLMResponseModelStandAloneServerStreaming(llmServerUrl, modelName, llmResponseTemp);	     
 	     CompletableFuture<Response<AiMessage>> futureResponse = new CompletableFuture<>();
 	     try 
 	     {
-	        modelStreaming.generate(newText, new StreamingResponseHandler<AiMessage>() 
+	        modelStreaming.generate(newText, new StreamingResponseHandler<AiMessage>()  
 	        {	        	
 	        	@Override
 	            public void onNext(String token) {
@@ -530,7 +522,7 @@ public class LargeLanguageModelService
 	    return llmResponse;
 	 }
 
-	private List<String> manageLlmPromptVolume(String textFullVolume, String category) //vj14
+	private List<String> manageLlmPromptVolume(String textFullVolume, String category) 
 	{
 		
 		if("explainflow".equals(category))  // explainflow bytecode fetched from VectorDB is dynamic and may be huge
@@ -572,7 +564,7 @@ public class LargeLanguageModelService
 	/*
 	 * get server config
 	 */
-	private Map<String, String> gatherConfig(boolean testMode, String llmModel) //vj7
+	private Map<String, String> gatherConfig(boolean testMode, String llmModel) 
 	{
 		Map<String, String> llmServerConfig = new HashMap<String, String>();
 		
@@ -580,7 +572,7 @@ public class LargeLanguageModelService
 		String resoucePath = currentDir + "\\"+ "\\src\\main\\resources\\application.properties";
 		
 		//vj5
-		String modelName       = llmModel; //vj7	
+		String modelName       = llmModel; 	
 		String llmServerPort   = "11434";
 		String llmResponseTemp = "0.9";
 		
@@ -646,7 +638,7 @@ public class LargeLanguageModelService
 			return model;
 	}
 
-	//vj4
+	
 	 /*
 	  * standalone LLM server instance.
 	  * be sure to have Ollama server running 
@@ -659,12 +651,12 @@ public class LargeLanguageModelService
 								        			   .modelName(modelName)
 								        			   .temperature(llmResponseTemp)
 								        			   .timeout(Durations.TEN_MINUTES) //best is to NOT change this
-								        			   .maxRetries(100)//vj14
+								        			   .maxRetries(100)
 								        			   .build();
 			return model;
 	}
 	 
-	 //vj8
+	 
 	 /*
 	  * standalone LLM server instance.
 	  * be sure to have Ollama server running 
