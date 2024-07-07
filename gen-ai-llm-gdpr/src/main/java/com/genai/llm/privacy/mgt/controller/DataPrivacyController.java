@@ -21,7 +21,7 @@ import com.genai.llm.privacy.mgt.utils.Constants;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 
-//vj19
+//vj20
 @RestController
 @RequestMapping(value="/gen-ai/v1/llm")
 public class DataPrivacyController
@@ -59,7 +59,7 @@ public class DataPrivacyController
 	public ResponseEntity<String> retrieve(@RequestParam(value = "userPrompt", required = true) String userPrompt,
 										   @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
 										   @RequestParam(value = "category", required = false, defaultValue = "generic") String category,
-										   @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+										   @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel,
 										   @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
 										   @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
 										   @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
@@ -77,15 +77,15 @@ public class DataPrivacyController
 	*/
 	@PostMapping("/knowledgebase")	
 	public ResponseEntity<String> knowledgeExtract(@RequestBody String documentContent,
-												   @RequestParam(value = "documentTitle", required = false, defaultValue = "") String documentTitle,
 												   @RequestParam(value = "customUserQuestion", required = true, defaultValue = "") String customUserQuestion,
+												   @RequestParam(value = "documentTitle", required = true, defaultValue = "") String documentTitle,
 												   @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
 												   @RequestParam(value = "documentRepoName", required = false, defaultValue = "") String documentRepoName,												   
 												   @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.6") String embeddingsMinScore,
 												   @RequestParam(value = "temperature", required = false, defaultValue = "0") String temperature,
 												   @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "4") String retrievalLimitMax,
 												   @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput,
-												   @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel)
+												   @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel)
 											  throws Exception
 	{	
 		boolean testMode= true;		
@@ -157,7 +157,7 @@ public class DataPrivacyController
 	 */
 	@GetMapping("/retrieve-flowtrain")	
 	public ResponseEntity<String> retrieveFlowTrain (@RequestParam("text") String text, 
-													 @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+													 @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel,
 												     @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
 												     @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
 												     @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
@@ -175,7 +175,7 @@ public class DataPrivacyController
 	*/
 	@GetMapping("/retrieve-apiinfo")	
 	public ResponseEntity<String> retrieveApiInfo (@RequestParam("text") String text, 
-													@RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+													@RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel,
 													@RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
 												    @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
 												    @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
@@ -226,7 +226,7 @@ public class DataPrivacyController
 	@GetMapping("/explainflow")	
 	public ResponseEntity<String> explainflow(@RequestParam(value = "userPrompt", required = true) String userPrompt,
 											  @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
-											  @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+											  @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel,
 											  @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
 										      @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
 										      @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
@@ -277,7 +277,7 @@ public class DataPrivacyController
 	@GetMapping("/testLLMServerInvocationOnly")
 	public ResponseEntity<String> invokeLLMServerOnlyWithSmallPayload(@RequestParam(value = "userPrompt", required = true) String userPrompt, 
 																	  @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
-																	  @RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel,
+																	  @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel,
 																	  @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
 																	  @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
 																	  @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
@@ -297,7 +297,7 @@ public class DataPrivacyController
 	@PostMapping("/testLLMServerInvocationOnly")
 	public ResponseEntity<String> invokeLLMServerOnlyWithBigPayload(@RequestBody String userPrompt,
 																	@RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
-																	@RequestParam(value = "llmModel", required = false, defaultValue = "llama2") String llmModel, 
+																	@RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel, 
 																	@RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
 																    @RequestParam(value = "temperature", required = false, defaultValue = "0.5") String temperature,
 																    @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "5") String retrievalLimitMax,
