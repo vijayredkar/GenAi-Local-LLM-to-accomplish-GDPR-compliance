@@ -9,6 +9,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+//vj20
 @Component
 public class Constants {
 	
@@ -43,15 +44,13 @@ public class Constants {
 	@Value("${internal.access.llm.models.vm.2}")
 	private String internalAccessLlmModelsVm2;
 			
-	//vj18
+	
 	@Value("${vector.db.index.examineflow}")
 	private String vectorDbIndexExamineflow;
 	
 	@Value("${vector.db.index.knowledgebase}")
 	private String vectorDbIndexKnowledgeBase;
 	
-	
-	//vj18
 	public String customSystemMessageKnwBase = 
 			" You are a helpful assistant. You will be provided documentation on standard procedures to be followed by an employee.\r\n" + 
 			" This vast documentation is tedious for the employee to comprehend. "
@@ -67,9 +66,9 @@ public class Constants {
 	// external.access.llm.models.pgocp.3=https://ollama-big-bawabaai-gpt.pgocp.uat.emiratesnbd.com#llama3:70b
 	private static Map<String, String> modelEnvPgOcpMap = new HashMap<String,String>();
 	private static Map<String, String> modelEnvPgVmMap = new HashMap<String,String>();
-	private static Map<String, String> categoryVectorDbMap = new HashMap<String,String>();//vj18
+	private static Map<String, String> categoryVectorDbMap = new HashMap<String,String>();
 	
-	public void createModelsToEnvMap()//vj15
+	public void createModelsToEnvMap()
 	 {
 		prepareEnvConnInternal();
 		prepareEnvConnExternal();
@@ -80,7 +79,7 @@ public class Constants {
 	 }	
 	
 	
-	private void prepareEnvConnInternal() //vj15
+	private void prepareEnvConnInternal() 
 	{
 		if(System.getProperty("deployment_env").contains("internal"))
 		{
@@ -122,7 +121,7 @@ public class Constants {
 		}		
 	}
 
-	private void prepareEnvConnExternal() //vj15
+	private void prepareEnvConnExternal() 
 	{	
 		if(System.getProperty("deployment_env").contains("external"))
 		{
@@ -162,7 +161,7 @@ public class Constants {
 		}	
 	}
 
-	//vj15
+	
 	public boolean isModelValid(String modelName, String env)
 	 {
 		boolean result = false;
@@ -185,7 +184,7 @@ public class Constants {
 		return result;
 	 }
 	
-	//vj15
+	
 	public String getResourceByModelName(String modelName, String env) throws Exception
 	 {
 		System.out.println("---- getResourceByModelName modelName and env: "+modelName + " - "+ env);
@@ -195,14 +194,19 @@ public class Constants {
 		{
 			throw new Exception("**** LLM Model name is not specified");
 		}
-				
 		
-		if(env.contains("Bawaba-PG-OCP"))
+		if("llama3:70b".equals(modelName)) //special case: massive 40GB llama3:70b model works better in the PG-VM
 		{
+			System.out.println("---- Got modelName: "+ modelName +  " Current env: " + env + " Routing to Bawaba-PG-VM");
+			result = modelEnvPgVmMap.get(modelName.trim());	
+			System.out.println("---- getResourceByModelName got valid match");
+		}
+		else if(env.contains("Bawaba-PG-OCP"))
+		{ 
 			result = modelEnvPgOcpMap.get(modelName.trim());
 			System.out.println("---- getResourceByModelName got valid match");
 		}
-		if(env.contains("Bawaba-PG-VM"))
+		else if(env.contains("Bawaba-PG-VM"))
 		{
 			result = modelEnvPgVmMap.get(modelName.trim());	
 			System.out.println("---- getResourceByModelName got valid match");
@@ -211,14 +215,14 @@ public class Constants {
 		return result;
 	 }
 	
-	//vj18
+	
 	public void createCategoryVectorDbMap()
 	 {
 		categoryVectorDbMap.put("examineFlow", vectorDbIndexExamineflow);
 		categoryVectorDbMap.put("knowledgebase", vectorDbIndexKnowledgeBase);
 	 }
 	
-	//vj18
+	
 	public Map<String, String> getCategoryVectorDbMap()
 	 {
 		return categoryVectorDbMap;
