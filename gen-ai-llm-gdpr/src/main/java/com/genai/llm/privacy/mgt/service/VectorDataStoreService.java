@@ -23,98 +23,92 @@ import dev.langchain4j.model.embedding. EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch; 
 import dev.langchain4j.store.embedding.EmbeddingStore;
 
-@Service //vjl
+//vj19
+@Service
 public class VectorDataStoreService
 {
-	@Value("${retrieval.max.limit:1}")	
+	@Value("${retrieval.max.limit}")	
 	int maxResultsToRetrieve;
 	
-	@Value("${embeddings.min.score:0.5}")	
+	@Value("${embeddings.min.score}")	
 	double minScoreRelevanceScore;
 	
 	@Value("${vector.db.index.flowtrain:collection-flowtrain-1}")	
 	String vectorDbIndexFlowtrain;
 	
-	@Value("${vector.db.index.apiinfo:collection-apiinfo-1}")//vj11
+	@Value("${vector.db.index.apiinfo:collection-apiinfo-1}")
 	String vectorDbIndexApiinfo;	
 	
 	@Value("${vector.db.load.flowtrain:Y}")	
 	String vectorDbLoadFlowtrain;
 	
-	@Value("${vector.db.load.apiinfo:Y}")//vj11
+	@Value("${vector.db.load.apiinfo:Y}")
 	String vectorDbLoadApiinfo;
 	
 	
-	@Value("${vector.db.load.city:Y}")//vj12
+	@Value("${vector.db.load.city:Y}")
 	String vectorDbLoadCity;
 	
-	@Value("${vector.db.load.employer:Y}")//vj12
+	@Value("${vector.db.load.employer:Y}")
 	String vectorDbLoadEmployer;
 	
-	@Value("${vector.db.index.examineflow:collection-examineflow-1}")	//vj14
+	@Value("${vector.db.index.examineflow:collection-examineflow-1}")	
 	String vectorDbIndexExamineflow;
 	
-	@Value("${vector.db.load.examineflow:Y}")//vj14
+	@Value("${vector.db.load.examineflow:Y}")
 	String vectorDbLoadExamineflow;
 	
-	@Value("${vector.db.index.knowledgebase:collection-knowledgebase-1}")	//vj18
+	@Value("${vector.db.index.knowledgebase:collection-knowledgebase-1}")	
 	String vectorDbIndexKnowledgebase;
 	
-	@Value("${vector.db.load.knowledgebase:Y}")//vj18
+	@Value("${vector.db.load.knowledgebase:Y}")
 	String vectorDbLoadKnowledgebase;
-		
-	@Value("${default.llm.model:llama3:70b}")//vj18
-	String defaultLlmModel;
 	 
-	@Value("${llm.system.message}")//vj18
+	@Value("${llm.system.message}")
 	String systemMessage;
-	
-	
-	
-	
 	
 	@Autowired	
 	private ModelService modelSvc;
 	
-	@Autowired //vjl	
+	@Autowired 	
 	private ContextLoadService contextLoadSvc;
 	
 	@Autowired	
 	private FileUtilsService fileUtilsSvc;
 	
-	@Autowired  //vj18
+	@Autowired  
 	Constants constants;
 	
-	@Autowired  //vj18
+	@Autowired  
 	private LargeLanguageModelService largeLangModelSvc;
 	
-	@Autowired  //vj18
+	@Autowired  
 	private RetrievalService retrievalSvc;
 		
-	//vj6
-	public String retrieve(String contextType, String userPrompt)
+	
+	public String retrieve(String contextType, String userPrompt, String embeddingsMinScore, String retrievalLimitMax)
 	{
-		return retrieve("city", contextType, userPrompt);//vj12
+		return retrieve("city", contextType, userPrompt, embeddingsMinScore, retrievalLimitMax);
 	}
 	
-	//vj14
-	public String retrieveFromVectorDBByCategory(String category, String contextType, String userPrompt)
+	
+	public String retrieveFromVectorDBByCategory(String category, String contextType, String userPrompt, String embeddingsMinScore, String retrievalLimitMax)
 	{
-		return retrieve(category, contextType, userPrompt);
+		return retrieve(category, contextType, userPrompt, embeddingsMinScore, retrievalLimitMax);
 	}
 	
 	/* 
 	 * VectorDB operations to fetch records
 	 */
-	public String retrieve(String category, String contextType, String userPrompt)//vj12
+	public String retrieve(String category, String contextType, String userPrompt, String embeddingsMinScore, String retrievalLimitMax)//vj19
 	{
 		System.out.println("\n--- started VectorDB operations");		
-		//vj3
+		
 		System.out.println("---- embeddingModel : "+ modelSvc.getEmbeddingModel() +" \n "+"contextType : "+ contextType +" \n "+"userPrompt : "+ userPrompt +" \n "+"category : "+ category  +" \n "+"minScore : "+ minScoreRelevanceScore +" \n "+"maxResults : "+ maxResultsToRetrieve);
 		
-		//vj3
+		
 		//List<EmbeddingMatch<TextSegment>> result = fetchRecords(text);
-		List<EmbeddingMatch<TextSegment>> result = fetchRecords(category, userPrompt, null);//vj18
+		List<EmbeddingMatch<TextSegment>> result = fetchRecords(category, userPrompt, null, embeddingsMinScore, retrievalLimitMax);//vj19
 		
 		StringBuilder responseBldr = new StringBuilder(); StringBuilder tempResponseBldr = new StringBuilder();
 		
@@ -136,42 +130,42 @@ public class VectorDataStoreService
 	/*
 	* fetches records from VectorDB based on semantic similarities	
 	*/	
-	public List<EmbeddingMatch<TextSegment>> fetchRecords(String category, String query, String suffix)//vj18
+	public List<EmbeddingMatch<TextSegment>> fetchRecords(String category, String query, String suffix, String embeddingsMinScore, String retrievalLimitMax)
 	{	
 		EmbeddingModel embdgModel= modelSvc.getEmbeddingModel();	
-		//EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStore(); //vjl 
+		//EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStore();  
 		
-		//vj6
+		
 		String vectorDbCollection = "collection-gdpr-1";
 		if("employer".equals(category))
 		{
 		  vectorDbCollection = "collection-employer-1";		
 		}
-		else if("flowtrain".equals(category)) //vj10
+		else if("flowtrain".equals(category))
 		{
 		  vectorDbCollection = vectorDbIndexFlowtrain; // "collection-flowtrain-1";
 		}
-		else if("apiinfo".equals(category)) //vj11
+		else if("apiinfo".equals(category))
 		{
 		  vectorDbCollection = vectorDbIndexApiinfo; // "collection-apiinfo-1";
 		}
-		else if("explainflow".equals(category)) //vj14
+		else if("explainflow".equals(category)) 
 		{
 		  vectorDbCollection = vectorDbIndexExamineflow; // "collection-examineflow-1";
 		}
-		else if("knowledgebase".equals(category)) //vj18
+		else if("knowledgebase".equals(category)) 
 		{
 		  suffix = suffix.replaceAll("\\s", "_");	
-		  vectorDbCollection = vectorDbIndexKnowledgebase+"-"+suffix; // collection-knowledgebase-2-Bawaba_Automation_13_:_AI_Scenario_&_Strategies
-		  //vectorDbCollection = vectorDbIndexKnowledgebase+"-"+"xyz";
+		  vectorDbCollection = vectorDbIndexKnowledgebase+"-"+suffix; //dynamic db name create
 		}
-		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);	//vj12
+		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);	
 		
 		Embedding queryEmbedding = embdgModel.embed (query).content(); 
-		//vj3
-	        return  embdgStore.findRelevant(queryEmbedding, maxResultsToRetrieve, minScoreRelevanceScore);
-	        //System.out.println("**** VectorDB invocation de-activated");
-	        //return new ArrayList<EmbeddingMatch<TextSegment>>(); // "dummySemanticResult"
+		
+		maxResultsToRetrieve   = "".equals(retrievalLimitMax.trim()) ? maxResultsToRetrieve : Integer.parseInt(retrievalLimitMax);
+		minScoreRelevanceScore = "".equals(embeddingsMinScore.trim()) ? minScoreRelevanceScore : Double.parseDouble(embeddingsMinScore);
+		
+	    return  embdgStore.findRelevant(queryEmbedding, maxResultsToRetrieve, minScoreRelevanceScore);
 	}
 	
 	/*  vj14
@@ -183,7 +177,7 @@ public class VectorDataStoreService
 		String result = "Failure : Vector DB load operation failed";
 		String vectorDbName = null;
 		
-		//vj18
+		
 		/*
 		if("examineFlow".equals(category))
 		{
@@ -199,7 +193,7 @@ public class VectorDataStoreService
 				insertVectorData (modelSvc.getEmbeddingModel(), text, testMode, vectorDbName);
 				result = "Success: Vector DB load operation succeeded";
 			}
-			if("Y".equals(vectorDbLoadKnowledgebase))//vj18
+			if("Y".equals(vectorDbLoadKnowledgebase))
 			{
 				List<String> batches = retrievalSvc.splitIntoBatches(text, 1000);
 				suffix = suffix.replaceAll("\\s", "_");
@@ -219,7 +213,7 @@ public class VectorDataStoreService
 		return result;
 	}
 	
-	//vj18
+	
 	/*
 	private String prepareVectorData(String text, boolean testMode, String category) 
 	{
@@ -238,7 +232,7 @@ public class VectorDataStoreService
 	{
 		System.out.println("\n---- started loading context to Vector DB ");	
 		
-		//vj12
+		
 		if("Y".equals(vectorDbLoadCity))
 		{
 		List<String> lines = new ArrayList<String>();		
@@ -246,7 +240,7 @@ public class VectorDataStoreService
 		insertVectorData (modelSvc.getEmbeddingModel(), lines, testMode, "collection-gdpr-1");
 		}
 		
-		//vj12
+		
 		if("Y".equals(vectorDbLoadEmployer))
 		{
 		List<String> employerLines = new ArrayList<String>();
@@ -254,7 +248,6 @@ public class VectorDataStoreService
 		insertVectorData (modelSvc.getEmbeddingModel(), employerLines, testMode, "collection-employer-1");
 		}
 		
-		//vj10
 		if("Y".equals(vectorDbLoadFlowtrain))
 		{
 			List<String> flowTrainLines = new ArrayList<String>();
@@ -262,7 +255,6 @@ public class VectorDataStoreService
 			insertVectorData (modelSvc.getEmbeddingModel(), flowTrainLines, testMode, vectorDbIndexFlowtrain); //"collection-flowtrain-1"
 		}
 		
-		//vj11
 		if("Y".equals(vectorDbLoadApiinfo))
 		{
 			List<String> apiInfoLines = new ArrayList<String>();
@@ -273,7 +265,7 @@ public class VectorDataStoreService
 		System.out.println("---- completed loading context to VectorDB");
 	}
 	
-	//vj6
+	
     private List<String> storeCityData(String fileNameWithFullPath, boolean testMode, List<String> lines) {
 		if(testMode)
 		{			
@@ -303,7 +295,7 @@ public class VectorDataStoreService
 		lines.add(testContext); 
 		testContext = "Kadapa"; 
 		lines.add(testContext);
-		testContext = "Coimbatore"; //vj3
+		testContext = "Coimbatore"; 
 		lines.add(testContext);	
 		}
 		else
@@ -313,7 +305,7 @@ public class VectorDataStoreService
 		return lines;
 	}
 
-    //vj6
+    
 	private List<String> storeEmployerData(String fileNameWithFullPath, boolean testMode, List<String> lines) {
 			if(testMode)
 			{
@@ -343,7 +335,7 @@ public class VectorDataStoreService
 			lines.add(testContext); 
 			testContext = "Romano Water Supply"; 
 			lines.add(testContext);
-			testContext = "Centerpoint"; //vj3
+			testContext = "Centerpoint"; 
 			lines.add(testContext);	
 			}
 			else
@@ -353,7 +345,6 @@ public class VectorDataStoreService
 			return lines;
 		}
 
-	//vj10
 	private List<String> storeFlowTrainData(String fileNameWithFullPath, boolean testMode, List<String> lines) {
 		if(testMode)
 		{
@@ -389,7 +380,6 @@ public class VectorDataStoreService
 		return lines;
 	}
 	
-	//vj11
 	private List<String> storeApiInfoData(String fileNameWithFullPath, boolean testMode, List<String> lines) {
 		if(testMode)
 		{
@@ -434,7 +424,7 @@ public class VectorDataStoreService
 	*/	
 	private void insertVectorData (EmbeddingModel embeddingModel, List<String> lines, boolean testMode, String vectorDbCollection) 
 	{
-		//vj1
+		
 		for (String text: lines)			
 		{
 			TextSegment segment1 = TextSegment.from(text, new Metadata()); 
@@ -443,7 +433,7 @@ public class VectorDataStoreService
 			if (testMode)			
 			{
 				System.out.println("---- VectorDB testMode "+testMode);			
-				EmbeddingStore<TextSegment> embdStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);//vj12
+				EmbeddingStore<TextSegment> embdStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);
 				if (embdStore!=null) //if VectorDB is running on local
 				{
 					System.out.println("---- VectorDB connection is good ");			
@@ -473,7 +463,7 @@ public class VectorDataStoreService
 			if (testMode)			
 			{
 				System.out.println("---- VectorDB testMode "+testMode);			
-				EmbeddingStore<TextSegment> embdStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);//vj12
+				EmbeddingStore<TextSegment> embdStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);
 				if (embdStore!=null) //if VectorDB is running on local
 				{
 					System.out.println("---- VectorDB connection is good ");			
@@ -501,7 +491,7 @@ public class VectorDataStoreService
 		//--
 	}
 
-	//vj14
+	
 	public String retrieveFromFileByCategory(String category, String contextType, String fileName) throws IOException
 	{
 		Path path = Paths.get("C:\\git-workspace\\BawabaFlowPoints\\"+fileName);
