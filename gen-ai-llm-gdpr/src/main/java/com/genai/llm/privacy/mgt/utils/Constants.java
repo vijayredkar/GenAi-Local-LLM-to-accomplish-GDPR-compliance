@@ -197,8 +197,12 @@ public class Constants {
 		
 		if("llama3:70b".equals(modelName)) //special case: massive 40GB llama3:70b model works better in the PG-VM
 		{
-			System.out.println("---- Got modelName: "+ modelName +  " Current env: " + env + " Routing to Bawaba-PG-VM");
-			result = modelEnvPgVmMap.get(modelName.trim());	
+			System.out.println("---- Got modelName: "+ modelName +  " \nCurrent env: " + env + " \nRouting to Bawaba-PG-VM");//vj21
+			//result = modelEnvPgVmMap.get(modelName.trim());	
+			result = externalAccessLlmModelsVm1;
+			System.out.println("---- Explicitly connecting resource: "+ result);//vj21
+			
+			
 			System.out.println("---- getResourceByModelName got valid match");
 		}
 		else if(env.contains("Bawaba-PG-OCP"))
