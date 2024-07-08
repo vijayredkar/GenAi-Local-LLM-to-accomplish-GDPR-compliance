@@ -9,7 +9,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-//vj20
+
 @Component
 public class Constants {
 	
@@ -195,14 +195,11 @@ public class Constants {
 			throw new Exception("**** LLM Model name is not specified");
 		}
 		
-		if("llama3:70b".equals(modelName)) //special case: massive 40GB llama3:70b model works better in the PG-VM
+		if("llama3:70b".equals(modelName.trim())) //special case: massive 40GB llama3:70b model works better in the PG-VM
 		{
-			System.out.println("---- Got modelName: "+ modelName +  " \nCurrent env: " + env + " \nRouting to Bawaba-PG-VM");//vj21
-			//result = modelEnvPgVmMap.get(modelName.trim());	
-			result = externalAccessLlmModelsVm1;
-			System.out.println("---- Explicitly connecting resource: "+ result);//vj21
-			
-			
+			System.out.println("---- Got modelName: "+ modelName +  " \nCurrent env: " + env + " \nRouting to Bawaba-PG-VM");
+			result = externalAccessLlmModelsVm1.split("#")[0];
+			System.out.println("---- Explicitly connecting resource: "+ result);//vj21			
 			System.out.println("---- getResourceByModelName got valid match");
 		}
 		else if(env.contains("Bawaba-PG-OCP"))
