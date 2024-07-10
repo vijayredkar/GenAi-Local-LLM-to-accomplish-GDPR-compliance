@@ -194,12 +194,12 @@ public class Constants {
 		{
 			throw new Exception("**** LLM Model name is not specified");
 		}
-		
-		if("llama3:70b".equals(modelName.trim())) //special case: massive 40GB llama3:70b model works better in the PG-VM
+		//vj22
+		if("llama3:70b".equals(modelName.trim())) //special case: massive 40GB llama3:70b model enabled in the PG-VM internal only
 		{
 			System.out.println("---- Got modelName: "+ modelName +  " \nCurrent env: " + env + " \nRouting to Bawaba-PG-VM");
-			result = externalAccessLlmModelsVm1.split("#")[0];
-			System.out.println("---- Explicitly connecting resource: "+ result);//vj21			
+			result = internalAccessLlmModelsVm2.split("#")[0];
+			System.out.println("---- Explicitly connecting resource: "+ result);		
 			System.out.println("---- getResourceByModelName got valid match");
 		}
 		else if(env.contains("Bawaba-PG-OCP"))
