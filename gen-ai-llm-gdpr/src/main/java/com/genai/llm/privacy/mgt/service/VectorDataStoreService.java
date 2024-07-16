@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path; 
 import java.nio.file.Paths; 
 import java.util.ArrayList; 
-import java.util.List;
+import java.util.List; 
 import org.springframework.beans.factory.annotation.Autowired; 
 import org.springframework.beans.factory.annotation.Value; 
 import org.springframework.stereotype.Service;
@@ -168,7 +168,22 @@ public class VectorDataStoreService
 	    return  embdgStore.findRelevant(queryEmbedding, maxResultsToRetrieve, minScoreRelevanceScore);
 	}
 	
-	/*  vj14
+	
+	
+	/*   vj24A
+	* embeddings	
+	*/	
+	public Embedding generateEmbeddings(String category, String query, String suffix, String embeddingsMinScore, String retrievalLimitMax)
+	{	
+		System.out.println("---- started generateEmbeddings");
+		EmbeddingModel embdgModel= modelSvc.getEmbeddingModel();	
+		Embedding queryEmbedding = embdgModel.embed (query).content(); 
+		
+		System.out.println("---- completed generateEmbeddings");
+	    return  queryEmbedding;
+	}
+	
+	/* 
 	* loads context to VectorDB. Usually from preset file/on startup
 	*/	
 	public String loadData (String text, String category, boolean testMode, String suffix)
@@ -195,7 +210,7 @@ public class VectorDataStoreService
 			}
 			if("Y".equals(vectorDbLoadKnowledgebase))
 			{
-				List<String> batches = retrievalSvc.splitIntoBatches(text, 1000);
+				List<String> batches = retrievalSvc.splitIntoBatches(text, category);
 				suffix = suffix.replaceAll("\\s", "_");
 				final String vectorDbNameKnwBase = vectorDbName + "-"+suffix; // collection-knowledgebase-2-Bawaba_Automation_13_:_AI_Scenario_&_Strategies
 				//final String vectorDbNameKnwBase = vectorDbName + "-"+"xyz"; 
