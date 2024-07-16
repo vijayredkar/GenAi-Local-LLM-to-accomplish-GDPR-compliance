@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import dev.langchain4j.data.embedding.Embedding;
 import jakarta.annotation.PostConstruct;
 
 @Service
@@ -30,7 +31,7 @@ public class RetrievalService
 	@Autowired
 	private LargeLanguageModelService largeLangModelSvc;
 	
-	/* vj14
+	/* 
 	 * LLM - RAG orchestration operations  - new with batches
 	 */
 	public String orchestrate(String userPrompt, String customSystemMessage, String category, String llmModel, 
@@ -45,10 +46,25 @@ public class RetrievalService
 		
 		// step -2  : invoke the LLM inferencing engine		
 		//List<String> llmPromptInBatches = splitPromptInBatches(promptWithFullContext, customSystemMessage,  category);
-		List<String> llmPromptInBatches = splitIntoBatches(promptWithFullContext, 1000);
+		//List<String> llmPromptInBatches = splitIntoBatches(promptWithFullContext, 1000);
+		List<String> llmPromptInBatches = splitIntoBatches(promptWithFullContext, category);
 		String response = invokeLLMServer(llmPromptInBatches, category, llmModel, testMode, temperature);		
 		 
 	    System.out.println("---- completed LLM - RAG orchestrations with response : \n"+ response);
+		return response;
+	}
+	
+	/* vj24
+	 * LLM - Image analyze 
+	 */
+	public String orchestrateImageAnalyze(String userPrompt, String customSystemMessage, String category, String llmModel, 
+										  boolean testMode, String temperature, String embeddingsMinScore, String retrievalLimitMax) 
+										  throws Exception
+	{	
+		System.out.println("\n---- started LLM - orchestrateImageAnalyze");
+		String response = invokeLLMServerImageAnalyze(userPrompt, category, llmModel, testMode, temperature);		
+		 
+	    System.out.println("---- completed LLM - orchestrateImageAnalyze : \n"+ response);
 		return response;
 	}
 	
@@ -84,7 +100,7 @@ public class RetrievalService
 		return systemMessage;
 	}
 	
-	private String invokeLLMServer( List<String> llmPromptInBatches, String category, String llmModel, boolean testMode, String temperature) throws Exception //vj19
+	private String invokeLLMServer( List<String> llmPromptInBatches, String category, String llmModel, boolean testMode, String temperature) throws Exception
 	{
 		 System.out.println("\n\n---- Total batch count: "+llmPromptInBatches.size());
 		 StringBuilder responseBldr = new StringBuilder();
@@ -107,6 +123,13 @@ public class RetrievalService
 	     }
 	     
 		return responseBldr.toString();
+	}
+	
+	//vj24
+	private String invokeLLMServerImageAnalyze( String userPrompt, String category, String llmModel, boolean testMode, String temperature) throws Exception
+	{  	 
+	  	String response = largeLangModelSvc.generateImageAnalyze(userPrompt, testMode, llmModel, category, temperature);
+		return response;
 	}
 
 	private String extractContext(String userPrompt, String customSystemMessage, String category, String embeddingsMinScore, String retrievalLimitMax) throws IOException {
@@ -132,7 +155,7 @@ public class RetrievalService
 		return contextFromPreparesDataSrc;
 	}
 	
-	/* vj19
+	/* 
 	 * LLM - RAG orchestration operations
 	 */
 	public String orchestrateWithRetry(String userPrompt, String category, boolean testMode, String llmModel, List<String> buffer, String embeddingsMinScore, String retrievalLimitMax, String temperature) throws Exception
@@ -141,7 +164,7 @@ public class RetrievalService
 		//String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = vectorDataSvc.retrieveFromVectorDBByCategory(category, contextType, userPrompt, embeddingsMinScore, retrievalLimitMax);//vj19
+		String contextFromVectorDb = vectorDataSvc.retrieveFromVectorDBByCategory(category, contextType, userPrompt, embeddingsMinScore, retrievalLimitMax);
 		
 		String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
 		System.out.println("---- constructed RAG promptWithFullContext \n"+promptWithFullContext);		
@@ -157,13 +180,13 @@ public class RetrievalService
 	/*
 	 * LLM - RAG orchestration operations
 	 */
-	public String orchestrateFlowTrain(String text, boolean testMode, String llmModel, String category, String embeddingsMinScore, String retrievalLimitMax, String temperature) throws Exception //vj19 
+	public String orchestrateFlowTrain(String text, boolean testMode, String llmModel, String category, String embeddingsMinScore, String retrievalLimitMax, String temperature) throws Exception
 	{	
 		System.out.println("\n---- started LLM - RAG orchestrations");
 		String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = vectorDataSvc.retrieveFromVectorDBByCategory(category, contextType, userPrompt, embeddingsMinScore, retrievalLimitMax);//vj19
+		String contextFromVectorDb = vectorDataSvc.retrieveFromVectorDBByCategory(category, contextType, userPrompt, embeddingsMinScore, retrievalLimitMax);
 		//String contextFromVectorDb = ""; 
 		
 		String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
@@ -182,13 +205,13 @@ public class RetrievalService
 	/*
 	 * LLM - RAG orchestration operations
 	 */
-	public String orchestrateApiInfo(String text, boolean testMode, String llmModel, String category, String embeddingsMinScore, String retrievalLimitMax, String temperature) throws Exception //vj19
+	public String orchestrateApiInfo(String text, boolean testMode, String llmModel, String category, String embeddingsMinScore, String retrievalLimitMax, String temperature) throws Exception 
 	{	
 		System.out.println("\n---- started LLM - RAG orchestrations");
 		String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = vectorDataSvc.retrieveFromVectorDBByCategory(category, contextType, userPrompt, embeddingsMinScore, retrievalLimitMax);//vj19
+		String contextFromVectorDb = vectorDataSvc.retrieveFromVectorDBByCategory(category, contextType, userPrompt, embeddingsMinScore, retrievalLimitMax);
 		
 		String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  "\"" + userPrompt + "\"";
 		System.out.println("---- constructed RAG promptWithFullContext \n"+promptWithFullContext);		
@@ -200,7 +223,7 @@ public class RetrievalService
 		return response;
 	}	
 	
-	//vj19
+	
 	public String orchestrateVectorDBOnly(String text, boolean testMode, String embeddingsMinScore, String retrievalLimitMax)
 	{	
 		return orchestrateVectorDBOnly("city", text, testMode, embeddingsMinScore, retrievalLimitMax);
@@ -209,13 +232,13 @@ public class RetrievalService
 	/*
 	 * invoke Vector DB
 	 */
-	public String orchestrateVectorDBOnly(String category, String text, boolean testMode, String embeddingsMinScore, String retrievalLimitMax) //vj19
+	public String orchestrateVectorDBOnly(String category, String text, boolean testMode, String embeddingsMinScore, String retrievalLimitMax) 
 	{	
 		System.out.println("\n---- started orchestrateVectorDBOnly");
 		String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = vectorDataSvc.retrieve(category, contextType, userPrompt, embeddingsMinScore, retrievalLimitMax); //vj19
+		String contextFromVectorDb = vectorDataSvc.retrieve(category, contextType, userPrompt, embeddingsMinScore, retrievalLimitMax); 
 		System.out.println("**** Ollama LLM server de-activated");
 		String response = contextFromVectorDb;
 			
@@ -223,22 +246,29 @@ public class RetrievalService
 		return response;
 	}	
 	
-	//vj5
-	/*
+	/*  vj24A
+	 * embeddings operations
+	 */
+	public Embedding manageEmbeddings(String category, String text, boolean testMode, String embeddingsMinScore, String retrievalLimitMax) 
+	{	
+		return vectorDataSvc.generateEmbeddings(category, text, null, embeddingsMinScore, retrievalLimitMax);
+	}
+	
+	 /*
 	 * invoke LLM engine
 	 */
-	public String orchestrateLLMServerOnly(String text, boolean testMode, String llmModel, String category, String temperature) throws Exception //vj19
+	public String orchestrateLLMServerOnly(String text, boolean testMode, String llmModel, String category, String temperature) throws Exception 
 	{	
 		System.out.println("\n---- started orchestrateLLMServerOnly");
 		String userPrompt = text;
 		
 		//--step -1  : enhance the user prompt with the context information from the DB 
-		String contextFromVectorDb = ""; //vj1
+		String contextFromVectorDb = ""; 
 		System.out.println("**** VectorDB de-activated");
 		String promptWithFullContext = systemMessage + " " + contextFromVectorDb + "  "+  userPrompt;
 		System.out.println("---- constructed RAG promptWithFullContext \n"+promptWithFullContext);		
 		
-		//vj3
+		
 		//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
 		
 		System.out.println("---- Final generation: promptWithFullContext \n\n"+promptWithFullContext);
@@ -249,7 +279,7 @@ public class RetrievalService
 		return response;
 	}
 	
-	//vj5
+	
 		/*
 		 * invoke LLM engine
 		 */
@@ -259,7 +289,7 @@ public class RetrievalService
 			String userPrompt = text;
 			
 			//--step -1  : enhance the user prompt with the context information from the DB 
-			String contextFromVectorDb = ""; //vj1
+			String contextFromVectorDb = ""; 
 			System.out.println("**** VectorDB de-activated");
 			
 			String systemMessage1 = context;
@@ -267,7 +297,7 @@ public class RetrievalService
 			String promptWithFullContext = systemMessage1 + " " + contextFromVectorDb1 + " \n "+  userPrompt;
 			System.out.println("---- constructed RAG promptWithFullContext \n"+promptWithFullContext);	
 			
-			//vj3
+			
 			//--step -2 : invoke the LLM inferencing engine with the fully constructed prompt
 			String response = largeLangModelSvc.generate(promptWithFullContext, testMode, llmModel, category, temperature);
 			
@@ -281,7 +311,7 @@ public class RetrievalService
 		 * split the prompt then send sequentially to Ollama +  collect responses sequentially.
 		 */
 		/*
-		private List<String> splitPromptInBatches(String textFullVolume, String customSystemMessage, String category) //vj18
+		private List<String> splitPromptInBatches(String textFullVolume, String customSystemMessage, String category)
 		{
 			int batchSize = 2000;
 			String userQuestionForKnwBase = null;
@@ -360,9 +390,11 @@ public class RetrievalService
 		 * Huge prompts to LLM cause timeouts/hallucination - eg .dynamically generated bytecodes
 		 * split the prompt in batches of smaller text
 		 */
-		public List<String> splitIntoBatches(String textFullVolume, int batchMaxSize)
-		{	
-			List<String> batchesToProcess = new ArrayList<String>();
+		//public List<String> splitIntoBatches(String textFullVolume, int batchMaxSize)
+		public List<String> splitIntoBatches(String textFullVolume, String category)
+		{							
+			List<String> batchesToProcess = new ArrayList<String>();			
+			int batchMaxSize = manageBatchSize(category); //vj24
 			
 			if(textFullVolume.length() < batchMaxSize) // i/p size is under tolerance limits	
 			 {
@@ -385,5 +417,27 @@ public class RetrievalService
 			 } //end else	 			 
 			 
 			 return batchesToProcess;
+		}
+
+		//vj24
+		private int manageBatchSize(String category) 
+		{
+			int batchMaxSize = 2000;
+			if("knowledgebase".equals(category))
+			{
+				batchMaxSize = 1000;
+			}
+			
+			return batchMaxSize;
+		}
+
+		public String fetchLogsByUrc(String documentContent) 
+		{
+			String result = null;
+			
+			//RestTe
+			
+			
+			return "";
 		}
 }
