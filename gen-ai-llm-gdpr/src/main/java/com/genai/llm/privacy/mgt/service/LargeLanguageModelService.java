@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
+//import org.apache.poi.xddf.usermodel.text.TextContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -19,9 +20,12 @@ import org.testcontainers.shaded.org.awaitility.Durations;
 import com.genai.llm.privacy.mgt.utils.Constants;
 
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.ImageContent; 
 import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel; 
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.output.Response;
@@ -403,6 +407,66 @@ public class LargeLanguageModelService
 	    
 	    return llmResponse;
 	 }
+	
+	//vj24
+	public String generateImageAnalyze(String text, boolean testMode, String llmModel, String category, String temperature) throws Exception
+	{	
+		Map<String, String> severConfigMap  = gatherConfig(testMode, llmModel); 
+		String modelName       = severConfigMap.get("modelName");	//default model
+		if(constants.isModelValid(modelName, System.getProperty("deployment_env")))
+		{
+			modelName = llmModel; //user specified model
+		}
+		else
+		{
+			System.out.println("**** Invalid LLM Model requested by user. Exiting");
+			//throw new Exception("**** Invalid LLM Model requested by user. Exiting");
+		}
+		//System.out.println("---- LLM Model set is "+modelName);
+		
+		Integer llmServerPort  = Integer.parseInt(severConfigMap.get("llmServerPort"));
+		Double llmResponseTemp = Double.parseDouble(severConfigMap.get("llmResponseTemp"));
+		
+		String llmServerUrl = constants.getResourceByModelName(modelName, System.getProperty("deployment_env"));
+		String llmResponse = "";
+		System.out.println("---- Generating with modelName: "+ modelName + " on LLM server: "+ llmServerUrl);
+		
+	    
+		
+		
+	    //   regular o/p
+	    ChatLanguageModel model = buildLLMResponseModelStandAloneServer(llmServerUrl, modelName, llmResponseTemp);	
+	    try
+	    {
+	    	/*
+	    	Response<AiMessage> llmResponse1 = model.generate(UserMessage.userMessage(TextContent.from("Provide 1 word title for this picture"), 
+	    					ImageContent.from("http://localhost:8888/test-1.JPG")));	
+	    	*/
+	    	
+	    	
+	    	String[] portions = text.split("~");
+	    	Response<AiMessage> llmResponse1 = model.generate(UserMessage.userMessage(TextContent.from(portions[0]), 
+	    													  ImageContent.from("http://localhost:8888/"+portions[1])));	
+					 										 						    
+	    	
+	    	llmResponse = llmResponse1.content().text();
+		}
+	    catch(Exception e)
+	    {
+	   	 System.out.println("---- error ");
+	   	 e.printStackTrace();
+	    }
+	    	    
+	    
+	    
+	    
+	    
+	    return llmResponse;
+	 }
+
+	
+	
+	
 
 	public String generate_1(String text, boolean testMode, String llmModel, String category) throws Exception 
 	{
@@ -643,7 +707,7 @@ public class LargeLanguageModelService
 	  * standalone LLM server instance.
 	  * be sure to have Ollama server running 
 	  */
-	 /*   vj20
+	 //   vj25
 	 private ChatLanguageModel buildLLMResponseModelStandAloneServer(String llmServerUrl, String modelName, double llmResponseTemp) 
 	 {
 			ChatLanguageModel model = OllamaChatModel.builder()
@@ -652,11 +716,11 @@ public class LargeLanguageModelService
 								        			   .modelName(modelName)
 								        			   .temperature(llmResponseTemp)
 								        			   .timeout(Durations.TEN_MINUTES) //best is to NOT change this
-								        			   .maxRetries(100)
+								        			   .maxRetries(100)//vj25
 								        			   .build();
 			return model;
 	}
-	*/ 
+	
 	 
 	 /*
 	  * standalone LLM server instance.
