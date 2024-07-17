@@ -61,9 +61,15 @@ public class VectorDataStoreService
 	@Value("${vector.db.index.knowledgebase:collection-knowledgebase-1}")	
 	String vectorDbIndexKnowledgebase;
 	
+	@Value("${vector.db.index.logsextract:col-logsextract-1}")	//vj24B
+	String vectorDbIndexLogsextract;
+	
 	@Value("${vector.db.load.knowledgebase:Y}")
 	String vectorDbLoadKnowledgebase;
 	 
+	@Value("${vector.db.load.logsextract:Y}")
+	String vectorDbLoadLogsextract;
+	
 	@Value("${llm.system.message}")
 	String systemMessage;
 	
@@ -128,7 +134,7 @@ public class VectorDataStoreService
 	}
 	
 	/*
-	* fetches records from VectorDB based on semantic similarities	
+	* fetches records from VectorDB based on semantic similarities	col-logsextract-18491466657002835721
 	*/	
 	public List<EmbeddingMatch<TextSegment>> fetchRecords(String category, String query, String suffix, String embeddingsMinScore, String retrievalLimitMax)
 	{	
@@ -157,6 +163,14 @@ public class VectorDataStoreService
 		{
 		  suffix = suffix.replaceAll("\\s", "_");	
 		  vectorDbCollection = vectorDbIndexKnowledgebase+"-"+suffix; //dynamic db name create
+		}
+		else if("logsextract".equals(category)) 
+		{
+			//hardcoded
+			//query = "NAerPaestcC24WhXwSI/contact-details HTTP/1.1 400 123 (0.519) [0.000] [0.443] Unique-Reference-Code 94b79904-e410-41be-9e43-85a6aceaba65 FinID EBI ChanID BNK";
+			//query ="Where is Delhi";
+		  //vectorDbCollection = vectorDbIndexKnowledgebase+"-"+suffix; //dynamic db name create
+			vectorDbCollection = vectorDbIndexLogsextract+"-"+suffix; //dynamic db name create with UUID documnetTitle
 		}
 		EmbeddingStore<TextSegment> embdgStore = contextLoadSvc.getEmbeddingStoreForTests(vectorDbCollection);	
 		
@@ -202,20 +216,27 @@ public class VectorDataStoreService
 		vectorDbName = constants.getCategoryVectorDbMap().get(category);
 		
 		try
-		{
-			if("Y".equals(vectorDbLoadExamineflow))
+		{    //vj24B
+			if("examineFlow".equals(category) && "Y".equals(vectorDbLoadExamineflow))
 			{
 				insertVectorData (modelSvc.getEmbeddingModel(), text, testMode, vectorDbName);
-				result = "Success: Vector DB load operation succeeded";
+				result = "Success: Vector DB load operation succeeded : examineFlow db index: "+vectorDbName;
 			}
-			if("Y".equals(vectorDbLoadKnowledgebase))
+			if("knowledgebase".equals(category) && "Y".equals(vectorDbLoadKnowledgebase))
 			{
 				List<String> batches = retrievalSvc.splitIntoBatches(text, category);
 				suffix = suffix.replaceAll("\\s", "_");
 				final String vectorDbNameKnwBase = vectorDbName + "-"+suffix; // collection-knowledgebase-2-Bawaba_Automation_13_:_AI_Scenario_&_Strategies
 				//final String vectorDbNameKnwBase = vectorDbName + "-"+"xyz"; 
 				batches.forEach(b -> insertVectorData (modelSvc.getEmbeddingModel(), b, testMode, vectorDbNameKnwBase));
-				result = "Success: Vector DB load operation succeeded";
+				result = "Success: Vector DB load operation succeeded : knowledgebase dynamic db index: "+vectorDbNameKnwBase;
+			}
+			if("logsextract".equals(category) && "Y".equals(vectorDbLoadLogsextract))
+			{
+				List<String> batches = retrievalSvc.splitIntoBatches(text, category);
+				final String vectorDbNameLogExtract = vectorDbName + "-"+suffix; //col-logsextract-1-8477365280683177256 col-logsextract-1--6610095036421092386
+				batches.forEach(b -> insertVectorData (modelSvc.getEmbeddingModel(), b, testMode, vectorDbNameLogExtract));
+				result = "Success: Vector DB load operation succeeded : logsextract dynamic db index: "+vectorDbNameLogExtract;
 			}
 		}
 		catch(Exception e )
