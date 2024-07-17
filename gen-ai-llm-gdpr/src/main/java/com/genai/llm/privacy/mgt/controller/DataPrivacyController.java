@@ -2,6 +2,7 @@ package com.genai.llm.privacy.mgt.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,12 +18,10 @@ import org.springframework.web.bind. annotation. RestController;
 import com.genai.llm.privacy.mgt.service.RetrievalService;
 import com.genai.llm.privacy.mgt.service.VectorDataStoreService;
 import com.genai.llm.privacy.mgt.utils.Constants;
-
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 
-//vj20
 @RestController
 @RequestMapping(value="/gen-ai/v1/llm")
 public class DataPrivacyController
@@ -35,6 +34,9 @@ public class DataPrivacyController
 	
 	@Autowired 
 	private Constants constants;
+	
+	@Value("${vector.db.index.logsextract}") //vj24B
+	private String vectorDbIndexLogsExtract;
 	
 	
 	/*
@@ -154,7 +156,7 @@ public class DataPrivacyController
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
-	/*
+	/* vj24B
 	*  extract RCA from vast volumes of logs 
 	*/
 	@PostMapping("/logsextract")	
@@ -163,7 +165,7 @@ public class DataPrivacyController
 												   @RequestParam(value = "documentTitle", required = true, defaultValue = "") String documentTitle,
 												   @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
 												   @RequestParam(value = "documentRepoName", required = false, defaultValue = "") String documentRepoName,												   
-												   @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.6") String embeddingsMinScore,
+												   @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
 												   @RequestParam(value = "temperature", required = false, defaultValue = "0") String temperature,
 												   @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "4") String retrievalLimitMax,
 												   @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput,
@@ -172,30 +174,26 @@ public class DataPrivacyController
 	{	
 		boolean testMode= true;		
 		System.out.println("\n---- started logsExtract - mode : "+testMode);		
-		String response = null;				
-		
+		String response = null;
+
+		String userQuestionForKnwBase = " Here is the user's question:\n" + constants.customUserQuestionLogsRca +"\n";
+		String systemMsgKnwBase = "".equals(customSystemMessage) ? constants.customSystemMessageLogsRca : customSystemMessage;	
 		
 		//stage-0: fetch logs by URC from Kibana APIs
-		retrievalSvc.fetchLogsByUrc(documentContent);
-		
-		
-		
-		
+		documentContent = retrievalSvc.fetchLogsByUrc(documentContent);
+		documentTitle =  new Long(Math.abs(UUID.randomUUID().getMostSignificantBits())).toString(); //only positive unique long randoms //col-logsextract-1-8477365280683177256
 		
 		//stage-1: data prepare - load to VectorDB - logs text i/p is vast. Split in to segments and save in to vectorDB per document title
 		if("".equals(documentRepoName.trim())) // save the i/p to DB. If already saved do not store again. 
-		{
+		{	
 			vectorDataSvc.loadData(documentContent, "logsextract", true, documentTitle);
 		}
 		
 		//stage-2: narrow down to relevant text segments only - fetch from vectorDB per document title only those segments relevant to user's question
-		List<EmbeddingMatch<TextSegment>> matchingRecords = vectorDataSvc.fetchRecords("logsExtract", customUserQuestion, documentTitle, embeddingsMinScore, retrievalLimitMax);
+		List<EmbeddingMatch<TextSegment>> matchingRecords = vectorDataSvc.fetchRecords("logsextract", constants.customUserQuestionLogsRca, documentTitle, embeddingsMinScore, retrievalLimitMax);
 		
-		//stage 3:  1st level of LLM refinement - retain only those segments that are > 95% relevant
-		String userQuestionForKnwBase = " Here is the user's question:\n" + customUserQuestion +"\n";
-		String systemMsgKnwBase = "".equals(customSystemMessage) ? constants.customSystemMessageKnwBase : customSystemMessage;		
+		//stage 3:  1st level of LLM refinement - retain only those segments that are > 95% relevant	
 		StringBuilder responseBldr = new StringBuilder();
-		
 		matchingRecords.forEach(m -> {									
 										System.out.println("---- semantically matching record from VectorDB: \n\n"+m.embedded().text());										
 										String enhancedPrompt = systemMsgKnwBase +" \n "+ m.embedded().text() +" \n "+userQuestionForKnwBase;										
@@ -215,9 +213,10 @@ public class DataPrivacyController
 		
 		//stage 4: 2nd level of LLM refinement - run user's question on the consolidated LLM 1st level response 
 		String consolidatedEnhancedPrompt = systemMsgKnwBase +" \n "+ response +" \n "+userQuestionForKnwBase;
+		String response2 = null;
 		try 
 		{
-			String response2 = retrievalSvc.orchestrateLLMServerOnly(consolidatedEnhancedPrompt, testMode, llmModel, "generic", temperature);
+			response2 = retrievalSvc.orchestrateLLMServerOnly(consolidatedEnhancedPrompt, testMode, llmModel, "generic", temperature);
 			responseBldr.append(response2).append("\n");
 			System.out.println("---- final response2: \n "+response2);
 		} 
@@ -226,19 +225,14 @@ public class DataPrivacyController
 			e.printStackTrace();
 		}   
 		
-		/*
-		//stage-1 response: very detailed based off the confluence vast text
-		response = retrievalSvc.orchestrate(documentContent, constants.customSystemMessageKnwBase+"Z@@"+customUserQuestion+"Z@@"+documentTitle,  "knowledgebase", llmModel, testMode);
-		
-		//stage-2 response: summarized to make it readable for generic audience
-		System.out.println("\n\n ---- Final summmary of the execution flow ----"); 
-		
-		String userQuestionForKnwBase = " Here is the user's question:\n" + customUserQuestion +"\n";		
-		String enhancedPrompt = constants.customSystemMessageKnwBase +" \n "+response+" \n "+userQuestionForKnwBase; //ensure this size is less than 2000 words
-		response = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic");
-		*/
-		
-		return new ResponseEntity<>(response, HttpStatus.OK);
+		//prepare final response 
+		String finalResponse = "";
+		finalResponse = finalResponse.concat(responseBldr.toString())										
+									 .concat("\n\n")
+									 .concat("For Internal use: tracking number for future: ")
+									 .concat(vectorDbIndexLogsExtract.concat("-").concat(documentTitle)); //col-logsextract-1-8477365280683177256
+
+		return new ResponseEntity<>(finalResponse, HttpStatus.OK);
 	}
 	
 	
@@ -402,7 +396,7 @@ public class DataPrivacyController
 	}
 	
 	/* vj24A
-	 * endpoint to create embeddings
+	 * endpoint to fetch response directly from the VectorDB only - city, employer names semantic match
 	 */
 	@PostMapping("/embeddings")
 	public ResponseEntity<String> generateEmbeddings(@RequestBody(required=true) String text,
