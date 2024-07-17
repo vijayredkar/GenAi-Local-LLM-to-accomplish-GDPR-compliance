@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,7 +38,6 @@ public class DataPrivacyController
 	
 	@Value("${vector.db.index.logsextract}") //vj24B
 	private String vectorDbIndexLogsExtract;
-	
 	
 	/*
 	endpoint to load newer contexts provided by the user
@@ -180,7 +180,7 @@ public class DataPrivacyController
 		String systemMsgKnwBase = "".equals(customSystemMessage) ? constants.customSystemMessageLogsRca : customSystemMessage;	
 		
 		//stage-0: fetch logs by URC from Kibana APIs
-		documentContent = retrievalSvc.fetchLogsByUrc(documentContent);
+		documentContent = retrievalSvc.fetchLogsByUrc(parseInput(documentContent));
 		documentTitle =  new Long(Math.abs(UUID.randomUUID().getMostSignificantBits())).toString(); //only positive unique long randoms //col-logsextract-1-8477365280683177256
 		
 		//stage-1: data prepare - load to VectorDB - logs text i/p is vast. Split in to segments and save in to vectorDB per document title
@@ -237,6 +237,20 @@ public class DataPrivacyController
 	
 	
 	
+	private String parseInput(String input) //vj24B
+	{ /*
+		{
+		    "urc":"94b79904-e410-41be-9e43-85a6aceaba65"
+		}
+		*/
+		input = input.replace("{", "")
+					 .replace("}", "");
+		input = input.trim()
+		     		.split(":")[1]
+		     		.replaceAll("\"", "");
+		return input;
+	}
+
 	/* 
 	 * Devathon prototype - external txfrs/IBAN/NRE flow explanations 
 	 */
