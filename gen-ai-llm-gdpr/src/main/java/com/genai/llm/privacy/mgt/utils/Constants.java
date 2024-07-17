@@ -51,6 +51,11 @@ public class Constants {
 	@Value("${vector.db.index.knowledgebase}")
 	private String vectorDbIndexKnowledgeBase;
 	
+	@Value("${vector.db.index.logsextract}") //vj24B
+	private String vectorDbIndexLogsExtract;
+	
+	
+	
 	public String customSystemMessageKnwBase = 
 			" You are a helpful assistant. You will be provided documentation on standard procedures to be followed by an employee.\r\n" + 
 			" This vast documentation is tedious for the employee to comprehend. "
@@ -60,7 +65,15 @@ public class Constants {
 			+ " If the documentation is more than 94% relevant then extract only the specific information that the user has asked for. "
 			+ " Provide your response in points format within 100 words only.\r\n" + 
 			" Here is the company documentation:\n";
-	
+	//vj24B
+	public String customSystemMessageLogsRca = "You are a helpful assistant. You are a helpful assistant. You will be provided application logs in CSV format. "
+												+ "Your role is production support analyst who is an expert in analyzing logs. "
+												+ "Your task is to extract information specific to the question asked by the user. "
+												+ "If the logs segment is less than 90% relevant to the question asked then simply respond with a blank statement. "
+												+ "If the documentation is more than 90% relevant then extract only the specific information that the user has asked for. "
+												+ "Provide concise and to the point response in 3 lines only. Here are the application logs:";
+	 
+	public String customUserQuestionLogsRca = "What is root causeof the error and which system did it originate from";
 	
 	//externalAccessLlmModelsPgOcp1
 	// external.access.llm.models.pgocp.3=https://ollama-big-bawabaai-gpt.pgocp.uat.emiratesnbd.com#llama3:70b
@@ -226,6 +239,7 @@ public class Constants {
 	 {
 		categoryVectorDbMap.put("examineFlow", vectorDbIndexExamineflow);
 		categoryVectorDbMap.put("knowledgebase", vectorDbIndexKnowledgeBase);
+		categoryVectorDbMap.put("logsextract", vectorDbIndexLogsExtract); //vj24B
 	 }
 	
 	
