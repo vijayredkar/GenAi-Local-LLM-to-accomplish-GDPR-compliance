@@ -31,6 +31,9 @@ public class RetrievalService
 	@Autowired
 	private LargeLanguageModelService largeLangModelSvc;
 	
+	@Autowired
+	private IntegrationService intgrSvc;
+	
 	/* 
 	 * LLM - RAG orchestration operations  - new with batches
 	 */
@@ -431,13 +434,10 @@ public class RetrievalService
 			return batchMaxSize;
 		}
 
-		public String fetchLogsByUrc(String documentContent) 
-		{
-			String result = null;
-			
-			//RestTe
-			
-			
-			return "";
+		public String fetchLogsByUrc(String documentContent) //vj24B
+		{			
+			String authToken = intgrSvc.getTokenizationAuth();
+			String logs = intgrSvc.getKibanaLogsByUrc(documentContent, authToken);			
+			return logs;
 		}
 }
