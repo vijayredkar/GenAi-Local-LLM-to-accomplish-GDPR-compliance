@@ -2,6 +2,8 @@ package com.genai.llm.privacy.mgt.service;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -82,21 +84,21 @@ public class IntegrationService
 		return request;
 	}
 	
-	public String getKibanaLogsByUrc(String input, String authToken)
+	public String getKibanaLogsByUrc(LogExtractRequest logExtractReq, String authToken)
 	{
-		LOGGER.info("---- getKibanaLogsByUrc input "+input);
+		LOGGER.info("---- getKibanaLogsByUrc input "+logExtractReq.toString());
 		String url = "https://bawabauat.clouduat.emiratesnbd.com/engagement/kibana-log-search/v1/search";  //move to config/vault
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
 		String logs = null;
 		
 		try 
 		{
-			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, prepareRequestBody(input.trim(), authToken), String.class);
+			ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, prepareRequestBody(logExtractReq, authToken), String.class);
 			LOGGER.info("---- content: "+response.getBody());
 			LOGGER.info("---- status: "+response.getStatusCode());
 						
 			logs = response.getBody();
-			LOGGER.info("\n\n---- extacted logs "+logs);
+			LOGGER.info("\n\n---- extacted logs "+logs); 
 			
 		}
 		catch(Exception e)
@@ -108,11 +110,24 @@ public class IntegrationService
 		return logs;
 	} 
 
-	private HttpEntity<TokenizationData> prepareRequestBody(String input, String authToken) 
-	{		
+	private HttpEntity<TokenizationData> prepareRequestBody(LogExtractRequest logExtractReq, String authToken) //24C
+	{
 		TokenizationData tokenizationData = new TokenizationData();
-		tokenizationData.setUrc(input);
+		tokenizationData.setUrc(logExtractReq.getUrc());
 		
+		String projectName =  logExtractReq.getProjectName();
+		String filter =  logExtractReq.getFilter(); //["error,info"]
+		Integer maxDuration =  logExtractReq.getMaxPastDaysFromNow();
+		
+		tokenizationData.setProjectName(handleInput(projectName, tokenizationData.getProjectName()));
+		tokenizationData.setFilter(handleFilter(filter, tokenizationData.getFilter()));
+		
+		maxDuration = Integer.parseInt(handleInput(maxDuration, tokenizationData.getMaxPastDaysFromNow().toString()));		
+		tokenizationData.setEndTime(handleDateTime(LocalDateTime.now())); //2024-07-14T05:40:38.006Z
+		tokenizationData.setStartTime(handleDateTime(LocalDateTime.now().minusDays(maxDuration)));
+		
+		System.out.println("---- request body \n "+tokenizationData.toString());
+				
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Content-Type", "application/json");
 		headers.set("Accept", "application/json");
@@ -123,6 +138,36 @@ public class IntegrationService
 		headers.set("Client-Ip", "1.1.1.1");		
 		headers.set("Unique-Reference-Code", "Logs-"+UUID.randomUUID().getMostSignificantBits());
 		HttpEntity<TokenizationData> request = new HttpEntity<TokenizationData>(tokenizationData,headers);
-		return request;
+		return request; // ["error"]   ["error"]
+	}
+
+	private List<String> handleFilter(String value, List<String> defaultValue) 
+	{
+		if(value == null)
+		{
+			return defaultValue; //default set to error
+		}
+		
+		//user specified 
+		List<String> filterList = new ArrayList<String>();
+		String[] portions = value.split(",");   // error,info,warn
+		Arrays.asList(portions)
+			  .forEach(p -> filterList.add(p));	
+		
+		return filterList;
+	}
+
+	private String handleDateTime(LocalDateTime dateTime) 
+	{
+		return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")); 
+	}
+
+	private String handleInput(Object value, String defaultValue)
+	{
+		if(value == null)
+		{
+			return defaultValue;
+		}
+		return value.toString();
 	}
 }
