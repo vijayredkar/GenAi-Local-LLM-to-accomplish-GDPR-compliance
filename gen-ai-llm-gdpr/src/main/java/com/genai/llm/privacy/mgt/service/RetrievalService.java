@@ -434,10 +434,42 @@ public class RetrievalService
 			return batchMaxSize;
 		}
 
-		public String fetchLogsByUrc(String documentContent) //vj24B
+		public String fetchLogsByUrc(String urc) //vj24C
+		{	
+			LogExtractRequest logExtractRequest = new LogExtractRequest();
+			logExtractRequest.setUrc(urc);
+			
+			return fetchLogsByUrc(logExtractRequest);
+		}
+		
+		public String fetchLogsByUrc(LogExtractRequest logExtractReq) //vj24C
 		{			
 			String authToken = intgrSvc.getTokenizationAuth();
-			String logs = intgrSvc.getKibanaLogsByUrc(documentContent, authToken);			
+			String logs = intgrSvc.getKibanaLogsByUrc(logExtractReq, authToken);			
 			return logs;
+		}
+
+		public boolean validateLogExtractReq(LogExtractRequest logExtractReq) //vj24C
+		{
+			boolean result = true;
+			if(logExtractReq.getUrc() == null || "".equals(logExtractReq.getUrc()))
+			{
+			 System.out.println("**** URC cannot be empty "+ logExtractReq.toString());
+			 result = false;
+			}
+			
+			 return result;
+		}
+		
+		public boolean validateLogExtractReq(String input) //vj24C
+		{
+			boolean result = true;
+			if(input == null || "".equals(input))
+			{
+			 System.out.println("**** URC cannot be empty ");
+			 result = false;
+			}
+			
+			 return result;
 		}
 }
