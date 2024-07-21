@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 
@@ -51,7 +53,7 @@ public class Constants {
 	@Value("${vector.db.index.knowledgebase}")
 	private String vectorDbIndexKnowledgeBase;
 	
-	@Value("${vector.db.index.logsextract}") //vj24B
+	@Value("${vector.db.index.logsextract}") 
 	private String vectorDbIndexLogsExtract;
 	
 	
@@ -65,16 +67,21 @@ public class Constants {
 			+ " If the documentation is more than 94% relevant then extract only the specific information that the user has asked for. "
 			+ " Provide your response in points format within 100 words only.\r\n" + 
 			" Here is the company documentation:\n";
-	//vj24B
-	public String customSystemMessageLogsRca = "You are a helpful assistant. You are a helpful assistant. You will be provided application logs in CSV format. "
+	//vj24D
+	public String customSystemMessageLogsRca = "You are a helpful assistant. You will be provided application logs text. "
 												+ "Your role is production support analyst who is an expert in analyzing logs. "
 												+ "Your task is to extract information specific to the question asked by the user. "
 												+ "If the logs segment is less than 90% relevant to the question asked then simply respond with a blank statement. "
-												+ "If the documentation is more than 90% relevant then extract only the specific information that the user has asked for. "
-												+ "Provide concise and to the point response in 3 lines only. Here are the application logs:";
-	 
-	public String customUserQuestionLogsRca = "What is root causeof the error and which system did it originate from";
-	
+												+ "If the logs segment is more than 90% relevant then extract only the specific information that the user has asked for. "
+												//+ "Provide concise and to the point response in 3 lines only. "
+												+ "Provide concise and to the point response. "
+												+ "Here are the application logs:"
+												;
+	//vj24D 
+	public String customUserQuestionLogsRca = "What is root cause of the error and which system did it originate from. "
+											+ "Provide your response in the below format "
+											+ "1- Root Cause of Error: 2- Originating System: 3- Additional info: ";
+									
 	//externalAccessLlmModelsPgOcp1
 	// external.access.llm.models.pgocp.3=https://ollama-big-bawabaai-gpt.pgocp.uat.emiratesnbd.com#llama3:70b
 	private static Map<String, String> modelEnvPgOcpMap = new HashMap<String,String>();
@@ -247,4 +254,53 @@ public class Constants {
 	 {
 		return categoryVectorDbMap;
 	 }
+	
+	public String handleFormat(String type) //vj24D
+	{
+		String result = "";
+		if("Y".equals(type.trim())) //only HTML for now
+		{
+			result = "\n Show the response in a HTML bullet list format for better readability on the browser. ";
+		}
+		
+		return result;		
+	}	
+	
+	public String handlePrompt(String text, String defaultText) 
+	{
+		String finalText =  "".equals(text) ? defaultText : defaultText;
+		return finalText  +"\n";
+	}
+	
+	public String prepareResponse(String documentTitle, String response2) {
+		String finalResponse = "";
+		finalResponse = finalResponse.concat(response2)										
+									 .concat("\n\n")
+									 .concat("For Internal Tracking: ")
+									 .concat(vectorDbIndexLogsExtract.concat("-").concat(documentTitle)); //col-logsextract-1-8477365280683177256
+		return finalResponse;
+	}
+	
+	public String parseInput(String input) //vj24D
+	{ /*
+		{
+		    "urc":"94b79904-e410-41be-9e43-85a6aceaba65"
+		}
+		*/
+		input = input.replace("{", "")
+					 .replace("}", "");
+		input = input.trim()
+		     		.split(":")[1]
+		     		.replaceAll("\"", "");
+		return input;
+	}
+	
+	public ResponseEntity<String> sendAnalyzeLogsResponse(String finalResponse) 
+	{
+		if(finalResponse.contains("Failure"))
+		{
+			return new ResponseEntity<>(finalResponse, HttpStatus.BAD_REQUEST);
+		}		
+		return new ResponseEntity<>(finalResponse, HttpStatus.OK);
+	}
 }
