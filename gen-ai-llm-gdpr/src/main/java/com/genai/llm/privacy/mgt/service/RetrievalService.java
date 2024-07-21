@@ -5,14 +5,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.genai.llm.privacy.mgt.utils.Constants;
+
 import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.store.embedding.EmbeddingMatch;
 import jakarta.annotation.PostConstruct;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Service
 public class RetrievalService 
@@ -33,6 +43,11 @@ public class RetrievalService
 	
 	@Autowired
 	private IntegrationService intgrSvc;
+	
+	@Autowired 
+	private Constants constants;
+	
+	private static final Logger LOGGER = LogManager.getLogger();
 	
 	/* 
 	 * LLM - RAG orchestration operations  - new with batches
@@ -472,4 +487,130 @@ public class RetrievalService
 			
 			 return result;
 		}
+		
+		public String injestLogs(String documentRepoName, String documentContent) 
+		{
+			String documentTitle =  new Long(Math.abs(UUID.randomUUID().getMostSignificantBits())).toString(); //only positive unique long randoms //col-logsextract-1-8477365280683177256
+			if("".equals(documentRepoName.trim())) // save the i/p to DB. If already saved do not store again. 
+			{	
+				vectorDataSvc.loadData(documentContent, "logsextract", true, documentTitle);
+			}		
+			return documentTitle;
+		}
+		
+		public StringBuilder refineBasicLevel(String temperature, String llmModel, boolean testMode, String userQuestionForKnwBase,
+								   String systemMsgKnwBase, List<EmbeddingMatch<TextSegment>> matchingRecords)
+		{
+			StringBuilder responseBldr = new StringBuilder();
+			matchingRecords.forEach(m -> {									
+											String enhancedPrompt = systemMsgKnwBase +" \n "+ m.embedded().text() +" \n "+userQuestionForKnwBase;										
+											try 
+											{
+													String response1 = orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic", temperature);
+													responseBldr.append(response1).append("\n");
+													System.out.println("---- response1: \n "+response1);
+											} catch (Exception e) 
+											{
+												e.printStackTrace();
+											}     
+										} );
+			return responseBldr;
+		}
+		
+		public String refineGranularLevel(String temperature, String llmModel, boolean testMode, StringBuilder responseBldr, String consolidatedEnhancedPrompt) 
+		{
+			String response2 = null;
+			try 
+			{ 
+				response2 = orchestrateLLMServerOnly(consolidatedEnhancedPrompt, testMode, llmModel, "generic", temperature);
+				responseBldr.append(response2).append("\n");
+				System.out.println("---- final response2: \n "+response2);
+			} 
+			catch (Exception e) 
+			{
+				e.printStackTrace();
+			}
+			return response2;
+		}
+		
+		public String summarizeAnalysis(String temperature, String htmlOutput, String llmModel, boolean testMode, StringBuilder responseBldr, String consolidatedEnhancedPrompt, String response2) 
+		{
+			System.out.println("---- LLM provided RCA before summary: \n"+responseBldr.toString());			
+			String finalEnhancedPrompt = consolidatedEnhancedPrompt + " Text to analyze is:\n "+ responseBldr.toString() + constants.handleFormat(htmlOutput);
+			System.out.println("\n---- finalEnhancedPrompt: \n"+finalEnhancedPrompt);
+			
+			try 
+			{
+				response2 = orchestrateLLMServerOnly(finalEnhancedPrompt, testMode, llmModel, "generic", temperature);
+			} 
+			catch (Exception e) 
+			{
+				e.printStackTrace();
+			}
+			return response2;
+		}		
+
+		public String analyzeLogs(String input, String filter, String projectName, String maxPastDaysFromNow, String customUserQuestion, String customSystemMessage,//vj24D
+								   String documentRepoName,  String embeddingsMinScore, String temperature, 
+								   String retrievalLimitMax, String htmlOutput, String llmModel, boolean testMode) 
+		{
+			LogExtractRequest logExtractReq = new LogExtractRequest();
+			logExtractReq.setUrc(input);
+			logExtractReq.setFilter(filter);
+			logExtractReq.setMaxPastDaysFromNow(Integer.parseInt(maxPastDaysFromNow));
+			logExtractReq.setProjectName(projectName);
+			
+			return analyzeLogs(logExtractReq, customUserQuestion, customSystemMessage, documentRepoName,
+					           embeddingsMinScore, temperature, retrievalLimitMax, htmlOutput, llmModel, testMode);
+			
+		}
+		
+		public String analyzeLogs(LogExtractRequest logExtractReq, String customUserQuestion, String customSystemMessage,//vj24D
+								   String documentRepoName, String embeddingsMinScore, String temperature, String retrievalLimitMax,
+								   String htmlOutput, String llmModel, boolean testMode) 
+		{
+			String finalResponse = null;
+			
+			//formulate prompts
+			String userQuestionForKnwBase = " Here is the user's question:\n" + constants.handlePrompt(customUserQuestion, constants.customUserQuestionLogsRca);
+			String systemMsgKnwBase = constants.handlePrompt(customSystemMessage, constants.customSystemMessageLogsRca);
+			
+			
+			//stage-1: fetch logs with Kibana APIs
+			String documentContent = fetchLogsByUrc(logExtractReq);		
+			if(documentContent.contains("{\"data\":{\"logs\":[]}}"))
+			{
+				System.out.println("**** No logs found "+ logExtractReq.toString());	
+				finalResponse = "Failed: No logs found";
+				return finalResponse;
+			}
+			LOGGER.info("\n\n---- stage 1 complete: retrieved Kibana logs");
+					
+			//stage-2: data prepare - load to VectorDB - logs text i/p is vast. Split in to segments and save in to vectorDB per document title
+			String documentTitle = injestLogs(documentRepoName, documentContent);
+			LOGGER.info("\n\n---- stage 2 complete: injested all Kibana logs in to the Vector DB");
+			
+			//stage-3: fetch vector DB segments relevant to user's question only
+			List<EmbeddingMatch<TextSegment>> matchingRecords = vectorDataSvc.fetchRecords("logsextract", constants.customUserQuestionLogsRca, documentTitle, embeddingsMinScore, retrievalLimitMax);
+			LOGGER.info("\n\n---- stage 3 complete: retrieved semantically closest segments from the Vector DB");
+			
+			//stage 4:  1st level of LLM refinement - retain only those segments that are > 95% relevant	
+			StringBuilder responseBldr = refineBasicLevel(temperature, llmModel, testMode, userQuestionForKnwBase, systemMsgKnwBase, matchingRecords);
+			LOGGER.info("\n\n---- stage 4 complete: LLM server RCA refinement - 1st level");
+			
+			//stage 5: 2nd level of LLM refinement - run user's question on the consolidated LLM 1st level response 
+			String consolidatedEnhancedPrompt = systemMsgKnwBase +" \n "+ responseBldr.toString() +" \n "+userQuestionForKnwBase;
+			String response2 = refineGranularLevel(temperature, llmModel, testMode, responseBldr,consolidatedEnhancedPrompt);   
+			LOGGER.info("\n\n---- stage 5 complete: LLM server RCA refinement - 2nd level");
+			
+			//stage 6: Summarize the analysis provided by LLM
+			response2 = summarizeAnalysis(temperature, htmlOutput, llmModel, testMode, responseBldr, consolidatedEnhancedPrompt, response2);
+			LOGGER.info("\n\n---- stage 6 complete: Summarize RCA ");
+			
+			//stage 7: prepare final response
+			finalResponse = constants.prepareResponse(documentTitle, response2);
+			LOGGER.info("\n\n---- stage 7 complete: Logs RCA performed ");
+			
+			return finalResponse;
+		}		
 }
