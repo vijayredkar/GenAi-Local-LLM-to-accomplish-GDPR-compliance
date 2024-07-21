@@ -4,22 +4,18 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-//24C
+//24D
 public class TokenizationData 
 {
 	    private static final long serialVersionUID = 1L;
 		
 		String urc; 
-		String projectName = "project-uat-*,enbd-tibco-*";
-	    Integer maxPastDaysFromNow = 14;
+		String projectName;
+	    Integer maxPastDaysFromNow;
 	    String startTime ;
-	    String endTime =  LocalDateTime.now().toString(); 
-	   
-	    
-	    //String filter = "[\"error\"]";   // "[\"error,info\"]";	 
-	    List<String> filter = new ArrayList<String>(); //"[\"error\"]";   // "[\"error,info\"]";	 
-	    
-	    
+	    String endTime =  LocalDateTime.now().toString();	   	 
+	    List<String> filter = new ArrayList<String>();	 
+	    	    
 	    public String getStartTime() {
 			return startTime;
 		}
@@ -42,12 +38,23 @@ public class TokenizationData
 		}
 		
 		public String getProjectName() {
+			if(projectName == null)
+			{
+				projectName = "project-uat-*,enbd-tibco-*";
+			}
 			return projectName;
 		}
+		
 		public void setProjectName(String projectName) {
 			this.projectName = projectName;
 		}
+		
 		public Integer getMaxPastDaysFromNow() {
+			
+			if(maxPastDaysFromNow == null)
+			{
+				maxPastDaysFromNow = 14;
+			}
 			return maxPastDaysFromNow;
 		}
 		public void setMaxPastDaysFromNow(Integer maxPastDaysFromNow) {
