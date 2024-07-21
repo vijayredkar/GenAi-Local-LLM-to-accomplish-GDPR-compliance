@@ -24,6 +24,11 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
+
 @RestController
 @RequestMapping(value="/gen-ai/v1/llm")
 public class DataPrivacyController
@@ -39,6 +44,8 @@ public class DataPrivacyController
 	
 	@Value("${vector.db.index.logsextract}") //vj24B
 	private String vectorDbIndexLogsExtract;
+	
+	private static final Logger LOGGER = LogManager.getLogger();
 	
 	/*
 	endpoint to load newer contexts provided by the user
@@ -77,6 +84,9 @@ public class DataPrivacyController
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
+	/*
+	*  extract specific knowledge from vast documentation/Confluence 
+	*/
 	/*
 	*  extract specific knowledge from vast documentation/Confluence 
 	*/
@@ -156,16 +166,15 @@ public class DataPrivacyController
 		
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
-
 	
-	/* vj24C
+	/* vj24D
 	*  extract RCA from vast volumes of logs 
 	*/
 	@GetMapping("/logsextract")	
 	public ResponseEntity<String> logsExtractSimple(@RequestParam(value = "urc", required = true, defaultValue = "") String urc,
-												   @RequestParam(value = "filter", required = false, defaultValue = "") String filter,
-												   @RequestParam(value = "projectName", required = false, defaultValue = "") String projectName,
-												   @RequestParam(value = "maxPastDaysFromNow", required = false, defaultValue = "") String maxPastDaysFromNow,			
+												   @RequestParam(value = "filter", required = false, defaultValue = "error") String filter,
+												   @RequestParam(value = "projectName", required = false, defaultValue = "project-uat-*,enbd-tibco-*") String projectName,
+												   @RequestParam(value = "maxPastDaysFromNow", required = false, defaultValue = "14") String maxPastDaysFromNow,			
 												   @RequestParam(value = "customUserQuestion", required = true, defaultValue = "") String customUserQuestion,
 												   @RequestParam(value = "documentTitle", required = false, defaultValue = "") String documentTitle,
 												   @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
@@ -173,95 +182,33 @@ public class DataPrivacyController
 												   @RequestParam(value = "embeddingsMinScore", required = false, defaultValue = "0.5") String embeddingsMinScore,
 												   @RequestParam(value = "temperature", required = false, defaultValue = "0") String temperature,
 												   @RequestParam(value = "retrievalLimitMax", required = false, defaultValue = "4") String retrievalLimitMax,
-												   @RequestParam(value = "htmlOutput", required = false, defaultValue = "") String htmlOutput,
+												   @RequestParam(value = "htmlOutput", required = false, defaultValue = "Y") String htmlOutput,
 												   @RequestParam(value = "llmModel", required = false, defaultValue = "llama3") String llmModel)
 											  throws Exception
 	{	
 		boolean testMode= true;		
-		System.out.println("\n---- started logsExtractSimple - mode : "+testMode);		
-		String response = null;
+		System.out.println("\n---- started logsExtractSimple - mode : "+testMode);
 		
+		//basic validations
 		if(!retrievalSvc.validateLogExtractReq(urc))
 		{
 			System.out.println("**** URC cannot be empty ");	
 			return new ResponseEntity<>("URC cannot be empty", HttpStatus.BAD_REQUEST);
 		}
-
-		String userQuestionForKnwBase = " Here is the user's question:\n" + constants.customUserQuestionLogsRca +"\n";
-		String systemMsgKnwBase = "".equals(customSystemMessage) ? constants.customSystemMessageLogsRca : customSystemMessage;	
 		
-		//stage-0: fetch logs by URC from Kibana APIs
-		String documentContent = retrievalSvc.fetchLogsByUrc(urc);
+		//process
+		String finalResponse = retrievalSvc.analyzeLogs(urc, filter, projectName, maxPastDaysFromNow, customUserQuestion, customSystemMessage, documentRepoName,
+										   		        embeddingsMinScore, temperature, retrievalLimitMax, htmlOutput, llmModel, testMode);
 		
-		if(documentContent.contains("{\"data\":{\"logs\":[]}}"))
-		{
-			System.out.println("**** No logs found "+ urc);	
-			return new ResponseEntity<>("No logs found", HttpStatus.BAD_REQUEST);
-		}
-		
-		
-		documentTitle =  new Long(Math.abs(UUID.randomUUID().getMostSignificantBits())).toString(); //only positive unique long randoms //col-logsextract-1-8477365280683177256
-		
-		//stage-1: data prepare - load to VectorDB - logs text i/p is vast. Split in to segments and save in to vectorDB per document title
-		if("".equals(documentRepoName.trim())) // save the i/p to DB. If already saved do not store again. 
-		{	
-			vectorDataSvc.loadData(documentContent, "logsextract", true, documentTitle);
-		}
-		
-		//stage-2: narrow down to relevant text segments only - fetch from vectorDB per document title only those segments relevant to user's question
-		List<EmbeddingMatch<TextSegment>> matchingRecords = vectorDataSvc.fetchRecords("logsextract", constants.customUserQuestionLogsRca, documentTitle, embeddingsMinScore, retrievalLimitMax);
-		
-		//stage 3:  1st level of LLM refinement - retain only those segments that are > 95% relevant	
-		StringBuilder responseBldr = new StringBuilder();
-		matchingRecords.forEach(m -> {									
-										System.out.println("---- semantically matching record from VectorDB: \n\n"+m.embedded().text());										
-										String enhancedPrompt = systemMsgKnwBase +" \n "+ m.embedded().text() +" \n "+userQuestionForKnwBase;										
-										
-										try 
-										{
-												String response1 = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic", temperature);
-												responseBldr.append(response1).append("\n");
-												System.out.println("---- response1: \n "+response1);
-										} catch (Exception e) 
-										{
-											e.printStackTrace();
-										}     
-									} );
-		
-		response =  responseBldr.toString();
-		
-		//stage 4: 2nd level of LLM refinement - run user's question on the consolidated LLM 1st level response 
-		String consolidatedEnhancedPrompt = systemMsgKnwBase +" \n "+ response +" \n "+userQuestionForKnwBase;
-		String response2 = null;
-		try 
-		{
-			response2 = retrievalSvc.orchestrateLLMServerOnly(consolidatedEnhancedPrompt, testMode, llmModel, "generic", temperature);
-			responseBldr.append(response2).append("\n");
-			System.out.println("---- final response2: \n "+response2);
-		} 
-		catch (Exception e) 
-		{
-			e.printStackTrace();
-		}   
-		
-		//prepare final response 
-		String finalResponse = "";
-		finalResponse = finalResponse.concat(responseBldr.toString())										
-									 .concat("\n\n")
-									 .concat("For Internal use: tracking number for future: ")
-									 .concat(vectorDbIndexLogsExtract.concat("-").concat(documentTitle)); //col-logsextract-1-8477365280683177256
-
-		return new ResponseEntity<>(finalResponse, HttpStatus.OK);
+		//output
+		return constants.sendAnalyzeLogsResponse(finalResponse);
 	}
 
-	
-	
-	
-	/* vj24C
+	/* 
 	*  extract RCA from vast volumes of logs 
 	*/
 	@PostMapping("/logsextract")	
-	public ResponseEntity<String> logsExtractCustom(@RequestBody LogExtractRequest logExtractReq, //vj24C
+	public ResponseEntity<String> logsExtractCustom(@RequestBody LogExtractRequest logExtractReq, 
 												   @RequestParam(value = "customUserQuestion", required = true, defaultValue = "") String customUserQuestion,
 												   @RequestParam(value = "documentTitle", required = true, defaultValue = "") String documentTitle,
 												   @RequestParam(value = "customSystemMessage", required = false, defaultValue = "") String customSystemMessage,
@@ -274,100 +221,23 @@ public class DataPrivacyController
 											  throws Exception
 	{	
 		boolean testMode= true;		
-		System.out.println("\n---- started logsExtract - mode : "+testMode);		
-		String response = null;
+		System.out.println("\n---- started logsExtract - mode : "+testMode);
 		
+		//basic validations
 		if(!retrievalSvc.validateLogExtractReq(logExtractReq))
 		{
 			System.out.println("**** URC cannot be empty "+ logExtractReq.toString());	
 			return new ResponseEntity<>("URC cannot be empty", HttpStatus.BAD_REQUEST);
 		}
 
-		String userQuestionForKnwBase = " Here is the user's question:\n" + constants.customUserQuestionLogsRca +"\n";
-		String systemMsgKnwBase = "".equals(customSystemMessage) ? constants.customSystemMessageLogsRca : customSystemMessage;	
+		//process
+		String finalResponse = retrievalSvc.analyzeLogs(logExtractReq, customUserQuestion, customSystemMessage, documentRepoName,
+										   embeddingsMinScore, temperature, retrievalLimitMax, htmlOutput, llmModel, testMode);
 		
-		//stage-0: fetch logs by URC from Kibana APIs
-		//documentContent = retrievalSvc.fetchLogsByUrc(parseInput(documentContent));
-		String documentContent = retrievalSvc.fetchLogsByUrc(logExtractReq);
-		
-		//{"data":{"logs":[]}}
-		if(documentContent.contains("{\"data\":{\"logs\":[]}}"))
-		{
-			System.out.println("**** No logs found "+ logExtractReq.toString());	
-			return new ResponseEntity<>("No logs found", HttpStatus.BAD_REQUEST);
-		}
-		
-		
-		documentTitle =  new Long(Math.abs(UUID.randomUUID().getMostSignificantBits())).toString(); //only positive unique long randoms //col-logsextract-1-8477365280683177256
-		
-		//stage-1: data prepare - load to VectorDB - logs text i/p is vast. Split in to segments and save in to vectorDB per document title
-		if("".equals(documentRepoName.trim())) // save the i/p to DB. If already saved do not store again. 
-		{	
-			vectorDataSvc.loadData(documentContent, "logsextract", true, documentTitle);
-		}
-		
-		//stage-2: narrow down to relevant text segments only - fetch from vectorDB per document title only those segments relevant to user's question
-		List<EmbeddingMatch<TextSegment>> matchingRecords = vectorDataSvc.fetchRecords("logsextract", constants.customUserQuestionLogsRca, documentTitle, embeddingsMinScore, retrievalLimitMax);
-		
-		//stage 3:  1st level of LLM refinement - retain only those segments that are > 95% relevant	
-		StringBuilder responseBldr = new StringBuilder();
-		matchingRecords.forEach(m -> {									
-										System.out.println("---- semantically matching record from VectorDB: \n\n"+m.embedded().text());										
-										String enhancedPrompt = systemMsgKnwBase +" \n "+ m.embedded().text() +" \n "+userQuestionForKnwBase;										
-										
-										try 
-										{
-												String response1 = retrievalSvc.orchestrateLLMServerOnly(enhancedPrompt, testMode, llmModel, "generic", temperature);
-												responseBldr.append(response1).append("\n");
-												System.out.println("---- response1: \n "+response1);
-										} catch (Exception e) 
-										{
-											e.printStackTrace();
-										}     
-									} );
-		
-		response =  responseBldr.toString();
-		
-		//stage 4: 2nd level of LLM refinement - run user's question on the consolidated LLM 1st level response 
-		String consolidatedEnhancedPrompt = systemMsgKnwBase +" \n "+ response +" \n "+userQuestionForKnwBase;
-		String response2 = null;
-		try 
-		{
-			response2 = retrievalSvc.orchestrateLLMServerOnly(consolidatedEnhancedPrompt, testMode, llmModel, "generic", temperature);
-			responseBldr.append(response2).append("\n");
-			System.out.println("---- final response2: \n "+response2);
-		} 
-		catch (Exception e) 
-		{
-			e.printStackTrace();
-		}   
-		
-		//prepare final response 
-		String finalResponse = "";
-		finalResponse = finalResponse.concat(responseBldr.toString())										
-									 .concat("\n\n")
-									 .concat("For Internal use: tracking number for future: ")
-									 .concat(vectorDbIndexLogsExtract.concat("-").concat(documentTitle)); //col-logsextract-1-8477365280683177256
-
-		return new ResponseEntity<>(finalResponse, HttpStatus.OK);
+		//output
+		return constants.sendAnalyzeLogsResponse(finalResponse);
 	}
 	
-	
-	
-	private String parseInput(String input) //vj24B
-	{ /*
-		{
-		    "urc":"94b79904-e410-41be-9e43-85a6aceaba65"
-		}
-		*/
-		input = input.replace("{", "")
-					 .replace("}", "");
-		input = input.trim()
-		     		.split(":")[1]
-		     		.replaceAll("\"", "");
-		return input;
-	}
-
 	/* 
 	 * Devathon prototype - external txfrs/IBAN/NRE flow explanations 
 	 */
@@ -589,5 +459,5 @@ public class DataPrivacyController
 		{
 			throw new Exception("User prompt is empty");
 		}
-	}
+	}	
 }
