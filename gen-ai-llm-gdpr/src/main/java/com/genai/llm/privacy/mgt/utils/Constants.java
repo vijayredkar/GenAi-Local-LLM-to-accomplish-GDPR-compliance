@@ -268,7 +268,7 @@ public class Constants {
 	
 	public String handlePrompt(String text, String defaultText) 
 	{
-		String finalText =  "".equals(text) ? defaultText : defaultText;
+		String finalText =  "".equals(text.trim()) ? defaultText : text; //vj24F
 		return finalText  +"\n";
 	}
 	
